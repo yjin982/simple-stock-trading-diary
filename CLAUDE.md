@@ -31,3 +31,15 @@ There is no lint, test, or type-check script configured yet. `tsconfig.json` onl
 - 변수명: camelCase
 - TypeScript strict mode
 - import는 알파벳 순으로 정리. 컴포넌트는 컴포넌트끼리, api는 api끼리 유형에 따라 묶어서 작성
+
+## 커밋 메시지 컨벤션 (Commit Convention)
+
+- 모든 커밋 메시지는 한국어로 작성합니다.
+- 다음 형식(Conventional Commits)을 엄격히 준수합니다.
+  - `feat`: 새로운 기능 추가
+  - `fix`: 버그 수정
+  - `docs`: 문서 변경
+  - `refactor`: 동작 변경 없는 코드 구조 개선
+  - `style`: 포맷, 세미콜론 등 의미 없는 스타일 변경
+- 형식: `<type>(<scope>): <summary>`
+- 본문(body)이 필요한 경우 `왜(Why)` 변경했는지 구체적으로 작성하세요.
