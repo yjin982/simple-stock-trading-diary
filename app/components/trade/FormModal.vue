@@ -42,19 +42,7 @@
 
       <!-- 계좌 선택 -->
       <UiFormField label="계좌" required :error="errors.accountId">
-        <select
-          v-model="form.accountId"
-          class="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          <option value="">계좌를 선택하세요</option>
-          <option
-            v-for="acc in dummyAccounts"
-            :key="acc.id"
-            :value="acc.id"
-          >
-            {{ acc.displayName }}
-          </option>
-        </select>
+        <AccountSelect v-model="form.accountId" />
       </UiFormField>
 
       <!-- 종목 검색 -->
@@ -142,13 +130,6 @@ const emit = defineEmits<{
 }>()
 
 const DUMMY_TODAY = '2026-07-01'
-
-// 더미 계좌 데이터
-const dummyAccounts = [
-  { id: '1', displayName: 'ISA계좌 (한국투자증권)' },
-  { id: '2', displayName: '일반위탁 (키움증권)' },
-  { id: '3', displayName: '1234-5678 (토스증권)' },
-]
 
 const stockSearchRef = ref<{ reset: () => void } | null>(null)
 

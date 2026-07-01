@@ -70,15 +70,16 @@
         >
           <button
             v-if="day !== null"
-            class="relative flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors"
+            class="relative flex h-8 w-8 flex-col items-center justify-center rounded-full text-sm transition-colors"
             :class="dayClass(day)"
             @click="selectDate(day)"
           >
-            {{ day }}
+            <span :class="getDayTradeType(day) ? '-mt-0.5' : ''">{{ day }}</span>
+            <!-- 거래 유형별 컬러 인디케이터 -->
             <span
-              v-if="hasTradeOnDay(day)"
-              class="absolute bottom-1 h-1 w-1 rounded-full"
-              :class="isSelectedDay(day) ? 'bg-primary-foreground' : 'bg-primary'"
+              v-if="getDayTradeType(day)"
+              class="absolute bottom-1 h-1.5 w-1.5 rounded-full"
+              :class="dotClass(day)"
             />
           </button>
           <div v-else class="h-8 w-8" />
@@ -268,8 +269,13 @@ function formatDate(day: number): string {
   return `${year}-${month}-${String(day).padStart(2, '0')}`
 }
 
-function hasTradeOnDay(day: number): boolean {
-  return formatDate(day) in tradeData
+function getDayTradeType(day: number): 'BUY' | 'SELL' | 'BOTH' | null {
+  const trades = tradeData[formatDate(day)]
+  if (!trades?.length) return null
+  const hasBuy = trades.some((t) => t.type === 'BUY')
+  const hasSell = trades.some((t) => t.type === 'SELL')
+  if (hasBuy && hasSell) return 'BOTH'
+  return hasBuy ? 'BUY' : 'SELL'
 }
 
 function isSelectedDay(day: number): boolean {
@@ -285,12 +291,22 @@ function dayClass(day: number) {
   const dateStr = formatDate(day)
   const isSelected = selectedDate.value === dateStr
   const isToday = dateStr === DUMMY_TODAY
-  const hasTrade = hasTradeOnDay(day)
+  const tradeType = getDayTradeType(day)
 
   if (isSelected) return 'bg-primary text-primary-foreground font-semibold hover:bg-primary/90'
   if (isToday) return 'ring-1 ring-primary text-primary font-semibold hover:bg-accent'
-  if (hasTrade) return 'font-medium text-foreground hover:bg-accent'
+  if (tradeType === 'BUY') return 'font-semibold text-red-600 hover:bg-red-50'
+  if (tradeType === 'SELL') return 'font-semibold text-blue-600 hover:bg-blue-50'
+  if (tradeType === 'BOTH') return 'font-semibold text-purple-600 hover:bg-purple-50'
   return 'text-muted-foreground hover:bg-accent'
+}
+
+function dotClass(day: number): string {
+  if (isSelectedDay(day)) return 'bg-white'
+  const type = getDayTradeType(day)
+  if (type === 'BUY') return 'bg-red-500'
+  if (type === 'SELL') return 'bg-blue-500'
+  return 'bg-purple-500' // BOTH
 }
 
 const selectedDateTrades = computed(() => {
