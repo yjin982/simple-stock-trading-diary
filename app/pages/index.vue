@@ -1,7 +1,17 @@
 <template>
   <div class="space-y-6">
-    <!-- 요약 카드 -->
+    <!-- 요약 카드 + 매매이력 입력 버튼 -->
     <section>
+      <div class="mb-3 flex items-center justify-between">
+        <h1 class="text-base font-semibold">포트폴리오 요약</h1>
+        <button
+          class="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          @click="openModal(null)"
+        >
+          <Plus class="h-4 w-4" />
+          매매이력 입력
+        </button>
+      </div>
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <UiCard title="총 평가금액" value="₩14,821,500" />
         <UiCard title="평가손익" value="+₩821,500" sub-value="+5.87%" trend="positive" />
@@ -76,13 +86,24 @@
       </div>
     </section>
 
-    <!-- 선택일 거래 내역 -->
+    <!-- 선택일 거래 내역 (날짜 클릭 시 항상 표시) -->
     <section
-      v-if="selectedDate && selectedDateTrades.length > 0"
+      v-if="selectedDate"
       class="rounded-lg border bg-card p-5 text-card-foreground shadow-sm"
     >
-      <h2 class="mb-3 text-sm font-semibold">{{ selectedDate }} 거래 내역</h2>
-      <div class="overflow-x-auto">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-sm font-semibold">{{ selectedDate }} 거래 내역</h2>
+        <button
+          class="flex items-center gap-1 rounded-md border border-input bg-background px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+          @click="openModal(selectedDate)"
+        >
+          <Plus class="h-3.5 w-3.5" />
+          매매이력 입력
+        </button>
+      </div>
+
+      <!-- 거래 있음 -->
+      <div v-if="selectedDateTrades.length > 0" class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b">
@@ -119,6 +140,17 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- 거래 없음 (빈 상태) -->
+      <div v-else class="flex flex-col items-center gap-3 py-8 text-center">
+        <div class="rounded-full bg-muted p-3">
+          <FileX class="h-5 w-5 text-muted-foreground" />
+        </div>
+        <div>
+          <p class="text-sm font-medium">거래 내역이 없습니다</p>
+          <p class="mt-0.5 text-xs text-muted-foreground">이 날짜에 등록된 매매 이력이 없어요.</p>
+        </div>
       </div>
     </section>
 
@@ -167,11 +199,17 @@
         </table>
       </div>
     </section>
+
+    <!-- 매매이력 입력 팝업 -->
+    <TradeFormModal
+      v-model:open="modalOpen"
+      :default-date="modalDate"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight } from '@lucide/vue'
+import { ChevronLeft, ChevronRight, FileX, Plus } from '@lucide/vue'
 
 // --- 더미 데이터 ---
 const tradeData: Record<string, { type: 'BUY' | 'SELL'; stockName: string; stockCode: string; quantity: string; price: string; total: string }[]> = {
@@ -268,5 +306,14 @@ function prevMonth() {
 function nextMonth() {
   selectedDate.value = null
   viewDate.value = new Date(viewDate.value.getFullYear(), viewDate.value.getMonth() + 1, 1)
+}
+
+// --- 매매이력 입력 팝업 ---
+const modalOpen = ref(false)
+const modalDate = ref<string | null>(null)
+
+function openModal(date: string | null) {
+  modalDate.value = date
+  modalOpen.value = true
 }
 </script>
