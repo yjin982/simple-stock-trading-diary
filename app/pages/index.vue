@@ -131,20 +131,20 @@
                 <div class="font-medium">{{ holding.stockName }}</div>
                 <div class="text-xs text-muted-foreground">{{ holding.stockCode }} · {{ holding.market }}</div>
               </td>
-              <td class="py-3 text-right">{{ holding.quantity }}</td>
-              <td class="py-3 text-right hidden sm:table-cell">{{ holding.avgPrice }}</td>
-              <td class="py-3 text-right">{{ holding.currentPrice }}</td>
+              <td class="py-3 text-right">{{ holding.quantity.toLocaleString() }}</td>
+              <td class="py-3 text-right hidden sm:table-cell">{{ fmtCurrency(holding.avgPrice, holding.currency) }}</td>
+              <td class="py-3 text-right">{{ fmtCurrency(holding.currentPrice, holding.currency) }}</td>
               <td
                 class="py-3 text-right font-medium"
-                :class="holding.pnl.startsWith('+') ? 'text-emerald-600' : 'text-red-500'"
+                :class="holding.pnl >= 0 ? 'text-emerald-600' : 'text-red-500'"
               >
-                {{ holding.pnl }}
+                {{ fmtPnl(holding.pnl, holding.currency) }}
               </td>
               <td
                 class="py-3 text-right hidden md:table-cell"
-                :class="holding.pnlRate.startsWith('+') ? 'text-emerald-600' : 'text-red-500'"
+                :class="holding.pnlRate >= 0 ? 'text-emerald-600' : 'text-red-500'"
               >
-                {{ holding.pnlRate }}%
+                {{ fmtPnlRate(holding.pnlRate) }}
               </td>
             </tr>
           </tbody>
@@ -162,38 +162,11 @@
 
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Plus } from '@lucide/vue'
-import type { TradeItem } from '~/components/trade/HistoryGroup.vue'
+import { DUMMY_TODAY, dummyHoldings, dummyTradeData } from '~/lib/dummy-data'
 
-// --- 더미 데이터 ---
-const tradeData: Record<string, TradeItem[]> = {
-  '2026-07-01': [
-    { type: 'BUY', stockName: '삼성전자', stockCode: '005930', quantity: '10', price: '₩75,000', total: '₩750,000' },
-    { type: 'SELL', stockName: 'Apple Inc.', stockCode: 'AAPL', quantity: '2', price: '$185.50', total: '$371.00' },
-  ],
-  '2026-06-25': [
-    { type: 'BUY', stockName: 'SK하이닉스', stockCode: '000660', quantity: '5', price: '₩180,000', total: '₩900,000' },
-  ],
-  '2026-06-20': [
-    { type: 'SELL', stockName: '삼성전자', stockCode: '005930', quantity: '5', price: '₩73,500', total: '₩367,500' },
-    { type: 'BUY', stockName: 'NVIDIA Corp.', stockCode: 'NVDA', quantity: '3', price: '$890.00', total: '$2,670.00' },
-  ],
-  '2026-06-10': [
-    { type: 'BUY', stockName: '삼성전자', stockCode: '005930', quantity: '20', price: '₩70,000', total: '₩1,400,000' },
-  ],
-  '2026-06-03': [
-    { type: 'BUY', stockName: 'Apple Inc.', stockCode: 'AAPL', quantity: '5', price: '$172.00', total: '$860.00' },
-  ],
-}
-
-const holdings = [
-  { stockName: '삼성전자', stockCode: '005930', market: 'KR', quantity: '25', avgPrice: '₩71,000', currentPrice: '₩75,000', pnl: '+₩100,000', pnlRate: '+5.63' },
-  { stockName: 'Apple Inc.', stockCode: 'AAPL', market: 'US', quantity: '3', avgPrice: '$172.00', currentPrice: '$185.50', pnl: '+$40.50', pnlRate: '+7.85' },
-  { stockName: 'SK하이닉스', stockCode: '000660', market: 'KR', quantity: '5', avgPrice: '₩180,000', currentPrice: '₩183,000', pnl: '+₩15,000', pnlRate: '+1.67' },
-  { stockName: 'NVIDIA Corp.', stockCode: 'NVDA', market: 'US', quantity: '3', avgPrice: '$890.00', currentPrice: '$920.00', pnl: '+$90.00', pnlRate: '+3.37' },
-]
+const holdings = dummyHoldings
 
 // --- 달력 상태 ---
-const DUMMY_TODAY = '2026-07-01'
 
 const viewDate = ref(new Date(2026, 6, 1))
 const selectedDate = ref<string | null>(DUMMY_TODAY)
@@ -222,7 +195,7 @@ function formatDate(day: number): string {
 }
 
 function getDayTradeType(day: number): 'BUY' | 'SELL' | 'BOTH' | null {
-  const trades = tradeData[formatDate(day)]
+  const trades = dummyTradeData[formatDate(day)]
   if (!trades?.length) return null
   const hasBuy = trades.some((t) => t.type === 'BUY')
   const hasSell = trades.some((t) => t.type === 'SELL')
@@ -263,7 +236,7 @@ function dotClass(day: number): string {
 
 const selectedDateTrades = computed(() => {
   if (!selectedDate.value) return []
-  return tradeData[selectedDate.value] ?? []
+  return dummyTradeData[selectedDate.value] ?? []
 })
 
 function prevMonth() {

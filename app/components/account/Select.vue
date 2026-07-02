@@ -71,21 +71,13 @@
 
 <script setup lang="ts">
 import { ChevronDown, Plus } from "@lucide/vue";
-import type { NewAccount } from "~/components/account/AddModal.vue";
-
-interface Account {
-  id: string;
-  displayName: string;
-}
+import { dummyAccounts } from "~/lib/dummy-data";
+import type { Account, NewAccount } from '~/types'
 
 const props = defineProps<{ modelValue: string }>();
 const emit = defineEmits<{ "update:modelValue": [id: string] }>();
 
-const accounts = ref<Account[]>([
-  { id: "1", displayName: "ISA계좌 (한국투자증권)" },
-  { id: "2", displayName: "일반위탁 (키움증권)" },
-  { id: "3", displayName: "1234-5678 (토스증권)" },
-]);
+const accounts = ref<Account[]>([...dummyAccounts]);
 
 const isOpen = ref(false);
 const addModalOpen = ref(false);

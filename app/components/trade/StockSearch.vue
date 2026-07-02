@@ -54,33 +54,12 @@
 
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core'
-
-interface Stock {
-  code: string
-  name: string
-  market: 'KR' | 'US'
-  price: string
-}
+import { dummyStocks } from '~/lib/dummy-data'
+import type { Stock } from '~/types'
 
 const emit = defineEmits<{
   select: [stock: Stock]
 }>()
-
-// 더미 종목 데이터
-const dummyStocks: Stock[] = [
-  { code: '005930', name: '삼성전자', market: 'KR', price: '75,000' },
-  { code: '000660', name: 'SK하이닉스', market: 'KR', price: '183,000' },
-  { code: '035420', name: 'NAVER', market: 'KR', price: '215,000' },
-  { code: '035720', name: '카카오', market: 'KR', price: '42,000' },
-  { code: '207940', name: '삼성바이오로직스', market: 'KR', price: '895,000' },
-  { code: '068270', name: '셀트리온', market: 'KR', price: '178,000' },
-  { code: 'AAPL', name: 'Apple Inc.', market: 'US', price: '185.50' },
-  { code: 'NVDA', name: 'NVIDIA Corp.', market: 'US', price: '920.00' },
-  { code: 'TSLA', name: 'Tesla Inc.', market: 'US', price: '245.00' },
-  { code: 'MSFT', name: 'Microsoft Corp.', market: 'US', price: '415.00' },
-  { code: 'GOOGL', name: 'Alphabet Inc.', market: 'US', price: '178.50' },
-  { code: 'META', name: 'Meta Platforms', market: 'US', price: '560.00' },
-]
 
 const containerRef = ref<HTMLElement | null>(null)
 const query = ref('')

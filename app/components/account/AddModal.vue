@@ -52,13 +52,7 @@
 </template>
 
 <script setup lang="ts">
-export interface NewAccount {
-  id: string
-  displayName: string
-  broker: string
-  alias: string
-  accountNumber: string
-}
+import type { NewAccount } from '~/types'
 
 const props = defineProps<{ open: boolean }>()
 

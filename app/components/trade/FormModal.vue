@@ -119,6 +119,8 @@
 </template>
 
 <script setup lang="ts">
+import { DUMMY_TODAY } from '~/lib/dummy-data'
+
 interface Props {
   open: boolean
   defaultDate?: string | null
@@ -128,8 +130,6 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
-
-const DUMMY_TODAY = '2026-07-01'
 
 const stockSearchRef = ref<{ reset: () => void } | null>(null)
 
@@ -190,11 +190,11 @@ watch(
   },
 )
 
-function onStockSelect(stock: { code: string; name: string; market: string; price: string }) {
+function onStockSelect(stock: { code: string; name: string; market: string; currency: 'KRW' | 'USD'; price: number }) {
   form.stockName = stock.name
   form.stockCode = stock.code
   // 추후 API 연동 전까지 더미 현재가 자동 입력
-  form.price = stock.price
+  form.price = String(stock.price)
   errors.stockCode = ''
 }
 

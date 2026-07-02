@@ -57,9 +57,9 @@
               >
                 {{ trade.accountName ?? '—' }}
               </td>
-              <td :class="['py-2.5 text-right align-top', card ? 'px-4' : '']">{{ trade.quantity }}</td>
-              <td :class="['py-2.5 text-right align-top', card ? 'px-4' : '']">{{ trade.price }}</td>
-              <td :class="['py-2.5 text-right font-medium align-top', card ? 'px-4' : '']">{{ trade.total }}</td>
+              <td :class="['py-2.5 text-right align-top', card ? 'px-4' : '']">{{ trade.quantity.toLocaleString() }}</td>
+              <td :class="['py-2.5 text-right align-top', card ? 'px-4' : '']">{{ fmtCurrency(trade.price, trade.currency) }}</td>
+              <td :class="['py-2.5 text-right font-medium align-top', card ? 'px-4' : '']">{{ fmtCurrency(trade.total, trade.currency) }}</td>
             </tr>
           </tbody>
         </table>
@@ -80,19 +80,7 @@
 
 <script setup lang="ts">
 import { FileX } from '@lucide/vue'
-
-export interface TradeItem {
-  type: 'BUY' | 'SELL'
-  stockName: string
-  stockCode: string
-  quantity: string
-  price: string
-  total: string
-  accountName?: string
-  reason?: string
-  date?: string
-  pnl?: number
-}
+import type { TradeItem } from '~/types'
 
 interface Props {
   trades: TradeItem[]
@@ -112,24 +100,6 @@ const props = withDefaults(defineProps<Props>(), {
   card: true,
 })
 
-const DAYS = ['일', '월', '화', '수', '목', '금', '토'] as const
-
-const formattedDate = computed(() => {
-  if (!props.date) return ''
-  const [y, m, d] = props.date.split('-').map(Number)
-  return `${y}년 ${m}월 ${d}일`
-})
-
-const dayOfWeek = computed(() => {
-  if (!props.date) return ''
-  const [y, m, d] = props.date.split('-').map(Number)
-  return DAYS[new Date(y, m - 1, d).getDay()]
-})
-
-function formatTradeDate(dateStr?: string): string {
-  if (!dateStr) return '—'
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const dow = DAYS[new Date(y, m - 1, d).getDay()]
-  return `${m}/${String(d).padStart(2, '0')} (${dow})`
-}
+const formattedDate = computed(() => props.date ? formatDateKo(props.date) : '')
+const dayOfWeek = computed(() => props.date ? getDayOfWeek(props.date) : '')
 </script>
