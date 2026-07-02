@@ -103,56 +103,7 @@
         </button>
       </div>
 
-      <!-- 거래 있음 -->
-      <div v-if="selectedDateTrades.length > 0" class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="border-b">
-              <th class="pb-2 text-left text-xs font-medium text-muted-foreground">유형</th>
-              <th class="pb-2 text-left text-xs font-medium text-muted-foreground">종목</th>
-              <th class="pb-2 text-right text-xs font-medium text-muted-foreground">수량</th>
-              <th class="pb-2 text-right text-xs font-medium text-muted-foreground">단가</th>
-              <th class="pb-2 text-right text-xs font-medium text-muted-foreground">거래금액</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(trade, i) in selectedDateTrades"
-              :key="i"
-              class="border-b last:border-0"
-            >
-              <td class="py-2.5">
-                <span
-                  class="inline-flex rounded px-1.5 py-0.5 text-xs font-semibold"
-                  :class="trade.type === 'BUY'
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'"
-                >
-                  {{ trade.type === 'BUY' ? '매수' : '매도' }}
-                </span>
-              </td>
-              <td class="py-2.5">
-                <div class="font-medium">{{ trade.stockName }}</div>
-                <div class="text-xs text-muted-foreground">{{ trade.stockCode }}</div>
-              </td>
-              <td class="py-2.5 text-right">{{ trade.quantity }}</td>
-              <td class="py-2.5 text-right">{{ trade.price }}</td>
-              <td class="py-2.5 text-right font-medium">{{ trade.total }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- 거래 없음 (빈 상태) -->
-      <div v-else class="flex flex-col items-center gap-3 py-8 text-center">
-        <div class="rounded-full bg-muted p-3">
-          <FileX class="h-5 w-5 text-muted-foreground" />
-        </div>
-        <div>
-          <p class="text-sm font-medium">거래 내역이 없습니다</p>
-          <p class="mt-0.5 text-xs text-muted-foreground">이 날짜에 등록된 매매 이력이 없어요.</p>
-        </div>
-      </div>
+      <TradeHistoryGroup :trades="selectedDateTrades" :card="false" />
     </section>
 
     <!-- 보유 종목 -->
@@ -210,10 +161,11 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, FileX, Plus } from '@lucide/vue'
+import { ChevronLeft, ChevronRight, Plus } from '@lucide/vue'
+import type { TradeItem } from '~/components/trade/HistoryGroup.vue'
 
 // --- 더미 데이터 ---
-const tradeData: Record<string, { type: 'BUY' | 'SELL'; stockName: string; stockCode: string; quantity: string; price: string; total: string }[]> = {
+const tradeData: Record<string, TradeItem[]> = {
   '2026-07-01': [
     { type: 'BUY', stockName: '삼성전자', stockCode: '005930', quantity: '10', price: '₩75,000', total: '₩750,000' },
     { type: 'SELL', stockName: 'Apple Inc.', stockCode: 'AAPL', quantity: '2', price: '$185.50', total: '$371.00' },

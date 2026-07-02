@@ -86,12 +86,12 @@
         />
       </UiFormField>
 
-      <!-- 메모 -->
-      <UiFormField label="메모">
+      <!-- 매수/매도 이유 -->
+      <UiFormField label="매수/매도 이유">
         <textarea
-          v-model="form.memo"
+          v-model="form.reason"
           rows="2"
-          placeholder="선택 입력"
+          placeholder="이유를 입력하세요 (선택)"
           class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
         />
       </UiFormField>
@@ -141,7 +141,7 @@ const form = reactive({
   stockCode: '',
   price: '',
   quantity: '',
-  memo: '',
+  reason: '',
 })
 
 const errors = reactive({
@@ -174,7 +174,7 @@ watch(
         stockCode: '',
         price: '',
         quantity: '',
-        memo: '',
+        reason: '',
       })
       Object.assign(errors, { date: '', accountId: '', stockCode: '', price: '', quantity: '' })
       stockSearchRef.value?.reset()
@@ -223,7 +223,7 @@ function handleSubmit() {
     stockCode: form.stockCode,
     price: form.price,
     quantity: form.quantity,
-    memo: form.memo,
+    reason: form.reason,
   })
 
   emit('update:open', false)
