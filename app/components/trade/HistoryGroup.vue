@@ -103,8 +103,8 @@
                   class="inline-flex rounded px-1.5 py-0.5 text-xs font-semibold"
                   :class="
                     trade.type === 'BUY'
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                   "
                 >
                   {{ trade.type === "BUY" ? "매수" : "매도" }}
