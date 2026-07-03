@@ -12,7 +12,7 @@
             type="button"
             class="flex-1 rounded-md py-2 text-sm font-semibold transition-colors"
             :class="form.type === 'BUY'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-red-500 text-white'
               : 'border border-input bg-background text-muted-foreground hover:bg-accent'"
             @click="form.type = 'BUY'"
           >
@@ -22,7 +22,7 @@
             type="button"
             class="flex-1 rounded-md py-2 text-sm font-semibold transition-colors"
             :class="form.type === 'SELL'
-              ? 'bg-red-500 text-white'
+              ? 'bg-blue-600 text-white'
               : 'border border-input bg-background text-muted-foreground hover:bg-accent'"
             @click="form.type = 'SELL'"
           >
@@ -87,7 +87,7 @@
       </UiFormField>
 
       <!-- 매수/매도 이유 -->
-      <UiFormField label="매수/매도 이유">
+      <UiFormField :label="form.type === 'BUY' ? '매수 이유' : '매도 이유'">
         <textarea
           v-model="form.reason"
           rows="2"

@@ -71,6 +71,13 @@
         >
           타입별
         </button>
+        <button
+          class="rounded px-3 py-1.5 text-sm font-medium transition-colors"
+          :class="groupBy === 'currency' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+          @click="setGroupBy('currency')"
+        >
+          통화별
+        </button>
       </div>
     </div>
 
@@ -161,6 +168,18 @@
       </div>
     </div>
 
+    <!-- 매매 이력 목록 (통화별) -->
+    <div v-else-if="groupBy === 'currency' && paginatedCurrencyGroups.length > 0" class="space-y-4">
+      <div v-for="group in paginatedCurrencyGroups" :key="group.currency">
+        <div class="mb-2 flex items-center gap-2">
+          <span class="text-sm font-semibold">{{ group.label }}</span>
+          <span class="ml-1 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{{ group.currency }}</span>
+          <span class="ml-auto text-xs text-muted-foreground">{{ group.trades.length }}건</span>
+        </div>
+        <TradeHistoryGroup :trades="group.trades" show-account show-date />
+      </div>
+    </div>
+
     <!-- 빈 상태 -->
     <div
       v-else-if="!isLoading"
@@ -209,7 +228,7 @@ const PERIODS = [
 
 // --- 상태 ---
 type Period = 'all' | '1w' | '1m' | '3m' | 'custom'
-type GroupBy = 'date' | 'stock' | 'type'
+type GroupBy = 'date' | 'stock' | 'type' | 'currency'
 
 const selectedPeriod = ref<Period>('all')
 const customStart = ref('')
@@ -302,6 +321,32 @@ const filteredTypeGroups = computed((): TypeGroup[] => {
 
 const paginatedTypeGroups = computed(() => paginateGroups(filteredTypeGroups.value, loadedCount.value))
 
+// --- 통화별 그룹 ---
+type CurrencyGroup = { currency: 'KRW' | 'USD'; label: string; trades: (TradeItem & { date: string })[] }
+
+const filteredCurrencyGroups = computed((): CurrencyGroup[] => {
+  const start = startDate.value
+  const end = endDate.value
+  const krwTrades: (TradeItem & { date: string })[] = []
+  const usdTrades: (TradeItem & { date: string })[] = []
+
+  allDateGroups.value.forEach(({ date, trades }) => {
+    if (date < start || date > end) return
+    trades.forEach(trade => {
+      const item = { ...trade, date }
+      if (trade.currency === 'KRW') krwTrades.push(item)
+      else usdTrades.push(item)
+    })
+  })
+
+  const result: CurrencyGroup[] = []
+  if (krwTrades.length > 0) result.push({ currency: 'KRW', label: '국내주식', trades: krwTrades })
+  if (usdTrades.length > 0) result.push({ currency: 'USD', label: '해외주식', trades: usdTrades })
+  return result
+})
+
+const paginatedCurrencyGroups = computed(() => paginateGroups(filteredCurrencyGroups.value, loadedCount.value))
+
 // --- 기간 요약 ---
 const periodSummary = computed(() => {
   const stats = {
@@ -335,12 +380,14 @@ const periodSummary = computed(() => {
 const totalFilteredCount = computed(() => {
   if (groupBy.value === 'date') return filteredDateGroups.value.reduce((s, g) => s + g.trades.length, 0)
   if (groupBy.value === 'stock') return filteredStockGroups.value.reduce((s, g) => s + g.trades.length, 0)
+  if (groupBy.value === 'currency') return filteredCurrencyGroups.value.reduce((s, g) => s + g.trades.length, 0)
   return filteredTypeGroups.value.reduce((s, g) => s + g.trades.length, 0)
 })
 
 const paginatedCount = computed(() => {
   if (groupBy.value === 'date') return paginatedDateGroups.value.reduce((s, g) => s + g.trades.length, 0)
   if (groupBy.value === 'stock') return paginatedStockGroups.value.reduce((s, g) => s + g.trades.length, 0)
+  if (groupBy.value === 'currency') return paginatedCurrencyGroups.value.reduce((s, g) => s + g.trades.length, 0)
   return paginatedTypeGroups.value.reduce((s, g) => s + g.trades.length, 0)
 })
 
