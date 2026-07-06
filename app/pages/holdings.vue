@@ -12,56 +12,32 @@
         title="국내 평가금액"
         :value="fmtKRW(summary.krwTotal)"
         :sub-value="fmtPnl(summary.krwPnl, 'KRW')"
-        :trend="summary.krwPnl >= 0 ? 'positive' : 'negative'"
+        :trend="pnlTrend(summary.krwPnl)"
       />
       <UiCard
         title="해외 평가금액"
         :value="fmtUSD(summary.usdTotal)"
         :sub-value="fmtPnl(summary.usdPnl, 'USD')"
-        :trend="summary.usdPnl >= 0 ? 'positive' : 'negative'"
+        :trend="pnlTrend(summary.usdPnl)"
       />
       <UiCard
         title="평균 수익률"
         :value="fmtPnlRate(summary.avgRate)"
-        :trend="summary.avgRate >= 0 ? 'positive' : 'negative'"
+        :trend="pnlTrend(summary.avgRate)"
       />
     </div>
 
     <!-- 필터 + 정렬 -->
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <div class="flex rounded-md border bg-card p-0.5">
-        <button
-          v-for="f in MARKET_FILTERS"
-          :key="f.value"
-          class="rounded px-3 py-1.5 text-sm font-medium transition-colors"
-          :class="
-            selectedMarket === f.value
-              ? 'bg-primary text-primary-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          "
-          @click="selectedMarket = f.value"
-        >
-          {{ f.label }}
-        </button>
-      </div>
+      <UiTabGroup v-model="selectedMarket" :options="MARKET_FILTERS" />
 
       <div class="flex items-center gap-1.5">
         <span class="text-xs text-muted-foreground">정렬</span>
-        <div class="flex rounded-md border bg-card p-0.5">
-          <button
-            v-for="s in SORT_OPTIONS"
-            :key="s.value"
-            class="rounded px-3 py-1.5 text-sm font-medium transition-colors"
-            :class="
-              sortBy === s.value
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            "
-            @click="setSortBy(s.value)"
-          >
-            {{ s.label }}
-          </button>
-        </div>
+        <UiTabGroup
+          :model-value="sortBy"
+          :options="SORT_OPTIONS"
+          @update:model-value="setSortBy"
+        />
         <button
           class="rounded-md border p-1.5 transition-colors hover:bg-accent"
           :title="sortDesc ? '내림차순' : '오름차순'"
@@ -73,20 +49,13 @@
     </div>
 
     <!-- 빈 상태 -->
-    <div
+    <UiEmptyState
       v-if="sortedHoldings.length === 0"
-      class="flex flex-col items-center gap-3 rounded-lg border bg-card py-16 text-center shadow-sm"
-    >
-      <div class="rounded-full bg-muted p-3">
-        <Briefcase class="h-5 w-5 text-muted-foreground" />
-      </div>
-      <div>
-        <p class="text-sm font-medium">보유 종목이 없습니다</p>
-        <p class="mt-0.5 text-xs text-muted-foreground">
-          선택한 시장에 보유 중인 종목이 없어요.
-        </p>
-      </div>
-    </div>
+      :icon="Briefcase"
+      title="보유 종목이 없습니다"
+      description="선택한 시장에 보유 중인 종목이 없어요."
+      card
+    />
 
     <!-- 보유 종목 테이블 -->
     <section
@@ -178,11 +147,7 @@
                   <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
                   <div
                     class="text-xs"
-                    :class="
-                      h.currentPrice >= h.avgPrice
-                        ? 'text-emerald-600'
-                        : 'text-red-500'
-                    "
+                    :class="pnlColor(h.currentPrice - h.avgPrice)"
                   >
                     {{ h.currentPrice >= h.avgPrice ? "▲" : "▼" }}
                     {{
@@ -197,13 +162,13 @@
                 </td>
                 <td
                   class="px-4 py-3 text-right font-medium"
-                  :class="h.pnl >= 0 ? 'text-emerald-600' : 'text-red-500'"
+                  :class="pnlColor(h.pnl)"
                 >
                   {{ fmtPnl(h.pnl, h.currency) }}
                 </td>
                 <td
                   class="px-4 py-3 text-right font-medium"
-                  :class="h.pnlRate >= 0 ? 'text-emerald-600' : 'text-red-500'"
+                  :class="pnlColor(h.pnlRate)"
                 >
                   {{ fmtPnlRate(h.pnlRate) }}
                 </td>
@@ -212,92 +177,7 @@
               <!-- 아코디언 상세: 매수-매도 이력 테이블 -->
               <tr v-if="expanded[h.stockCode]" class="border-b bg-muted">
                 <td colspan="7" class="bg-muted/20 px-6 pb-4 pt-3">
-                  <table class="w-full text-xs table-fixed">
-                    <thead>
-                      <tr class="border-b border-muted-foreground/50">
-                        <th
-                          class="pb-2 text-left font-medium text-muted-foreground"
-                        >
-                          매수일
-                        </th>
-                        <th
-                          class="pb-2 text-left font-medium text-muted-foreground"
-                        >
-                          매도일
-                        </th>
-                        <th
-                          class="pb-2 text-left font-medium text-muted-foreground"
-                        >
-                          보유기간
-                        </th>
-                        <th
-                          class="pb-2 text-right font-medium text-muted-foreground"
-                        >
-                          수량
-                        </th>
-                        <th
-                          class="pb-2 text-right font-medium text-muted-foreground"
-                        >
-                          수익률
-                        </th>
-                        <th
-                          class="pb-2 text-right font-medium text-muted-foreground"
-                        >
-                          실현손익
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <template v-if="tradeMatches[h.stockCode]?.length">
-                        <tr
-                          v-for="(match, i) in tradeMatches[h.stockCode]"
-                          :key="i"
-                          class="border-b border-muted/60 last:border-0"
-                        >
-                          <td class="py-2">
-                            {{ formatTradeDate(match.buyDate) }}
-                          </td>
-                          <td class="py-2">
-                            {{ formatTradeDate(match.sellDate) }}
-                          </td>
-                          <td class="py-2 text-left">
-                            {{ match.holdingDays }}일
-                          </td>
-                          <td class="py-2 text-right">
-                            {{ match.quantity }}주
-                          </td>
-                          <td
-                            class="py-2 text-right"
-                            :class="
-                              match.pnlRate >= 0
-                                ? 'text-emerald-600'
-                                : 'text-red-500'
-                            "
-                          >
-                            {{ fmtPnlRate(match.pnlRate) }}
-                          </td>
-                          <td
-                            class="py-2 text-right font-medium"
-                            :class="
-                              match.realizedPnl >= 0
-                                ? 'text-emerald-600'
-                                : 'text-red-500'
-                            "
-                          >
-                            {{ fmtPnl(match.realizedPnl, match.currency) }}
-                          </td>
-                        </tr>
-                      </template>
-                      <tr v-else>
-                        <td
-                          colspan="6"
-                          class="py-3 text-center text-muted-foreground"
-                        >
-                          아직 매도 내역이 없습니다
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <HoldingsTradeHistory :stock-code="h.stockCode" :currency="h.currency" />
                 </td>
               </tr>
             </template>
@@ -310,7 +190,7 @@
 
 <script setup lang="ts">
 import { ArrowDown, ArrowUp, Briefcase, ChevronDown } from "@lucide/vue";
-import { dummyHoldings, dummyTradeData } from "~/lib/dummy-data";
+import { dummyHoldings } from "~/lib/dummy-data";
 
 type Market = "all" | "KR" | "US";
 type SortKey = "pnlRate" | "pnl" | "total" | "name";
@@ -347,125 +227,6 @@ const expanded = ref<Record<string, boolean>>({});
 function toggleExpand(code: string) {
   expanded.value[code] = !expanded.value[code];
 }
-
-// --- FIFO 매수-매도 매칭 ---
-interface TradeMatch {
-  buyDate: string;
-  sellDate: string;
-  holdingDays: number;
-  quantity: number;
-  pnlRate: number;
-  realizedPnl: number;
-  currency: "KRW" | "USD";
-}
-
-const tradeMatches = computed<Record<string, TradeMatch[]>>(() => {
-  const result: Record<string, TradeMatch[]> = {};
-
-  for (const h of dummyHoldings) {
-    result[h.stockCode] = [];
-  }
-
-  // 종목별 거래 수집 후 날짜 오름차순 정렬
-  const tradesByStock: Record<
-    string,
-    Array<{
-      date: string;
-      type: "BUY" | "SELL";
-      quantity: number;
-      price: number;
-      pnl?: number;
-    }>
-  > = {};
-
-  for (const h of dummyHoldings) {
-    tradesByStock[h.stockCode] = [];
-  }
-
-  for (const [date, trades] of Object.entries(dummyTradeData)) {
-    for (const trade of trades) {
-      if (tradesByStock[trade.stockCode]) {
-        tradesByStock[trade.stockCode]!.push({
-          date,
-          type: trade.type,
-          quantity: trade.quantity,
-          price: trade.price,
-          pnl: trade.pnl,
-        });
-      }
-    }
-  }
-
-  for (const [stockCode, trades] of Object.entries(tradesByStock)) {
-    const currency =
-      dummyHoldings.find((h) => h.stockCode === stockCode)?.currency ?? "KRW";
-    const sorted = [...trades].sort((a, b) => a.date.localeCompare(b.date));
-
-    // FIFO 큐: 미매도 매수 잔량
-    const buyQueue: Array<{
-      date: string;
-      remainingQty: number;
-      price: number;
-    }> = [];
-
-    for (const trade of sorted) {
-      if (trade.type === "BUY") {
-        buyQueue.push({
-          date: trade.date,
-          remainingQty: trade.quantity,
-          price: trade.price,
-        });
-      } else {
-        // SELL: FIFO로 매수 잔량 소진
-        let sellQty = trade.quantity;
-        const matchedLots: Array<{ date: string; qty: number; price: number }> =
-          [];
-
-        while (sellQty > 0 && buyQueue.length > 0) {
-          const buy = buyQueue[0]!;
-          const matchQty = Math.min(sellQty, buy.remainingQty);
-          matchedLots.push({ date: buy.date, qty: matchQty, price: buy.price });
-          buy.remainingQty -= matchQty;
-          sellQty -= matchQty;
-          if (buy.remainingQty === 0) buyQueue.shift();
-        }
-
-        if (matchedLots.length === 0) continue;
-
-        const totalBuyCost = matchedLots.reduce(
-          (s, l) => s + l.qty * l.price,
-          0,
-        );
-        const totalQty = matchedLots.reduce((s, l) => s + l.qty, 0);
-        const avgBuyPrice = totalBuyCost / totalQty;
-        const buyDate = matchedLots[0]!.date;
-
-        const [by, bm, bd] = buyDate.split("-").map(Number);
-        const [sy, sm, sd] = trade.date.split("-").map(Number);
-        const holdingDays = Math.floor(
-          (new Date(sy, sm - 1, sd).getTime() -
-            new Date(by, bm - 1, bd).getTime()) /
-            86400000,
-        );
-
-        const realizedPnl = trade.pnl ?? (trade.price - avgBuyPrice) * totalQty;
-        const pnlRate = (realizedPnl / (avgBuyPrice * totalQty)) * 100;
-
-        result[stockCode]!.push({
-          buyDate,
-          sellDate: trade.date,
-          holdingDays,
-          quantity: totalQty,
-          pnlRate,
-          realizedPnl,
-          currency,
-        });
-      }
-    }
-  }
-
-  return result;
-});
 
 // --- 필터 + 정렬 ---
 const filteredHoldings = computed(() =>

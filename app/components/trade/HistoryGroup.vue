@@ -155,23 +155,13 @@
         </table>
       </div>
 
-      <div
+      <UiEmptyState
         v-else
-        :class="[
-          'flex flex-col items-center gap-3 text-center',
-          card ? 'py-8' : 'py-6',
-        ]"
-      >
-        <div class="rounded-full bg-muted p-3">
-          <FileX class="h-5 w-5 text-muted-foreground" />
-        </div>
-        <div>
-          <p class="text-sm font-medium">거래 내역이 없습니다</p>
-          <p class="mt-0.5 text-xs text-muted-foreground">
-            이 날짜에 등록된 매매 이력이 없어요.
-          </p>
-        </div>
-      </div>
+        :icon="FileX"
+        title="거래 내역이 없습니다"
+        description="이 날짜에 등록된 매매 이력이 없어요."
+        :py="card ? 'py-8' : 'py-6'"
+      />
     </div>
   </div>
 </template>

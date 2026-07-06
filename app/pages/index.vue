@@ -226,15 +226,13 @@
               </td>
               <td
                 class="py-3 text-right font-medium"
-                :class="holding.pnl >= 0 ? 'text-emerald-600' : 'text-red-500'"
+                :class="pnlColor(holding.pnl)"
               >
                 {{ fmtPnl(holding.pnl, holding.currency) }}
               </td>
               <td
                 class="py-3 text-right hidden md:table-cell"
-                :class="
-                  holding.pnlRate >= 0 ? 'text-emerald-600' : 'text-red-500'
-                "
+                :class="pnlColor(holding.pnlRate)"
               >
                 {{ fmtPnlRate(holding.pnlRate) }}
               </td>

@@ -16,19 +16,7 @@
     <div class="flex flex-wrap items-center justify-between gap-2">
       <!-- 기간 필터 + 직접 지정 날짜 입력 -->
       <div class="flex flex-wrap items-center gap-2">
-        <div class="flex rounded-md border bg-card p-0.5">
-          <button
-            v-for="p in PERIODS"
-            :key="p.value"
-            class="rounded px-3 py-1.5 text-sm font-medium transition-colors"
-            :class="selectedPeriod === p.value
-              ? 'bg-primary text-primary-foreground'
-              : 'text-muted-foreground hover:text-foreground'"
-            @click="setPeriod(p.value)"
-          >
-            {{ p.label }}
-          </button>
-        </div>
+        <UiTabGroup v-model="selectedPeriod" :options="PERIODS" />
 
         <template v-if="selectedPeriod === 'custom'">
           <input
@@ -49,36 +37,7 @@
       </div>
 
       <!-- 그룹 토글 -->
-      <div class="flex rounded-md border bg-card p-0.5">
-        <button
-          class="rounded px-3 py-1.5 text-sm font-medium transition-colors"
-          :class="groupBy === 'date' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-          @click="setGroupBy('date')"
-        >
-          날짜별
-        </button>
-        <button
-          class="rounded px-3 py-1.5 text-sm font-medium transition-colors"
-          :class="groupBy === 'stock' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-          @click="setGroupBy('stock')"
-        >
-          종목별
-        </button>
-        <button
-          class="rounded px-3 py-1.5 text-sm font-medium transition-colors"
-          :class="groupBy === 'type' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-          @click="setGroupBy('type')"
-        >
-          타입별
-        </button>
-        <button
-          class="rounded px-3 py-1.5 text-sm font-medium transition-colors"
-          :class="groupBy === 'currency' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-          @click="setGroupBy('currency')"
-        >
-          통화별
-        </button>
-      </div>
+      <UiTabGroup v-model="groupBy" :options="GROUP_BY_OPTIONS" />
     </div>
 
     <!-- 기간 요약 카드 -->
@@ -109,14 +68,14 @@
             <p
               v-if="periodSummary.hasPnlKRW"
               class="mt-1 text-sm font-semibold"
-              :class="periodSummary.pnlKRW >= 0 ? 'text-emerald-600' : 'text-red-500'"
+              :class="pnlColor(periodSummary.pnlKRW)"
             >
               {{ fmtPnl(periodSummary.pnlKRW, 'KRW') }}
             </p>
             <p
               v-if="periodSummary.hasPnlUSD"
               class="text-xs"
-              :class="periodSummary.pnlUSD >= 0 ? 'text-emerald-600' : 'text-red-500'"
+              :class="pnlColor(periodSummary.pnlUSD)"
             >
               {{ fmtPnl(periodSummary.pnlUSD, 'USD') }}
             </p>
@@ -181,18 +140,13 @@
     </div>
 
     <!-- 빈 상태 -->
-    <div
+    <UiEmptyState
       v-else-if="!isLoading"
-      class="flex flex-col items-center gap-3 rounded-lg border bg-card py-16 text-center shadow-sm"
-    >
-      <div class="rounded-full bg-muted p-3">
-        <ScrollText class="h-5 w-5 text-muted-foreground" />
-      </div>
-      <div>
-        <p class="text-sm font-medium">매매 내역이 없습니다</p>
-        <p class="mt-0.5 text-xs text-muted-foreground">선택한 기간에 등록된 매매 이력이 없어요.</p>
-      </div>
-    </div>
+      :icon="ScrollText"
+      title="매매 내역이 없습니다"
+      description="선택한 기간에 등록된 매매 이력이 없어요."
+      card
+    />
 
     <!-- 무한 스크롤 센티넬 -->
     <div ref="sentinelRef" class="flex items-center justify-center py-2">
@@ -218,12 +172,19 @@ import { DUMMY_TODAY, dummyTradeData } from '~/lib/dummy-data'
 
 const PAGE_SIZE = 30
 
-const PERIODS = [
-  { label: '전체', value: 'all' as const },
-  { label: '1주일', value: '1w' as const },
-  { label: '1개월', value: '1m' as const },
-  { label: '3개월', value: '3m' as const },
-  { label: '직접 지정', value: 'custom' as const },
+const PERIODS: { label: string; value: Period }[] = [
+  { label: '전체', value: 'all' },
+  { label: '1주일', value: '1w' },
+  { label: '1개월', value: '1m' },
+  { label: '3개월', value: '3m' },
+  { label: '직접 지정', value: 'custom' },
+]
+
+const GROUP_BY_OPTIONS: { label: string; value: GroupBy }[] = [
+  { label: '날짜별', value: 'date' },
+  { label: '종목별', value: 'stock' },
+  { label: '타입별', value: 'type' },
+  { label: '통화별', value: 'currency' },
 ]
 
 // --- 상태 ---
@@ -407,15 +368,6 @@ const sentinelRef = ref<HTMLElement | null>(null)
 useIntersectionObserver(sentinelRef, ([entry]) => {
   if (entry.isIntersecting) loadMore()
 })
-
-// --- UI 액션 ---
-function setPeriod(period: Period) {
-  selectedPeriod.value = period
-}
-
-function setGroupBy(g: GroupBy) {
-  groupBy.value = g
-}
 
 // --- 팝업 ---
 const modalOpen = ref(false)

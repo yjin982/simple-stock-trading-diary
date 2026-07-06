@@ -24,3 +24,11 @@ export function fmtPnl(n: number, currency: "KRW" | "USD"): string {
 export function fmtPnlRate(n: number): string {
   return (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
 }
+
+export function pnlColor(n: number): string {
+  return n >= 0 ? "text-emerald-600" : "text-red-500";
+}
+
+export function pnlTrend(n: number): "positive" | "negative" {
+  return n >= 0 ? "positive" : "negative";
+}
