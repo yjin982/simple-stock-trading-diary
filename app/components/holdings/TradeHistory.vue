@@ -39,8 +39,6 @@
 </template>
 
 <script setup lang="ts">
-import { dummyTradeData } from '~/lib/dummy-data'
-
 interface TradeMatch {
   buyDate: string
   sellDate: string
@@ -55,24 +53,13 @@ const props = defineProps<{
   currency: 'KRW' | 'USD'
 }>()
 
+const tradesStore = useTradesStore()
+
 const matches = computed<TradeMatch[]>(() => {
-  const rawTrades: Array<{
-    date: string
-    type: 'BUY' | 'SELL'
-    quantity: number
-    price: number
-    pnl?: number
-  }> = []
-
-  for (const [date, trades] of Object.entries(dummyTradeData)) {
-    for (const trade of trades) {
-      if (trade.stockCode === props.stockCode) {
-        rawTrades.push({ date, type: trade.type, quantity: trade.quantity, price: trade.price, pnl: trade.pnl })
-      }
-    }
-  }
-
-  rawTrades.sort((a, b) => a.date.localeCompare(b.date))
+  const rawTrades = tradesStore.items
+    .filter(t => t.stockCode === props.stockCode)
+    .map(t => ({ date: t.tradeDate, type: t.type, quantity: t.quantity, price: t.price }))
+    .sort((a, b) => a.date.localeCompare(b.date))
 
   const buyQueue: Array<{ date: string; remainingQty: number; price: number }> = []
   const result: TradeMatch[] = []
@@ -109,7 +96,7 @@ const matches = computed<TradeMatch[]>(() => {
       (new Date(sy, sm - 1, sd).getTime() - new Date(by, bm - 1, bd).getTime()) / 86400000,
     )
 
-    const realizedPnl = trade.pnl ?? (trade.price - avgBuyPrice) * totalQty
+    const realizedPnl = (trade.price - avgBuyPrice) * totalQty
     const pnlRate = (realizedPnl / (avgBuyPrice * totalQty)) * 100
 
     result.push({ buyDate, sellDate: trade.date, holdingDays, quantity: totalQty, pnlRate, realizedPnl })

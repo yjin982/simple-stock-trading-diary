@@ -12,6 +12,36 @@ export interface TradeItem {
   pnl?: number
 }
 
+export interface Trade {
+  id: string
+  userId: string
+  accountId: string
+  type: 'BUY' | 'SELL'
+  stockCode: string
+  stockName: string
+  market: 'KR' | 'US'
+  currency: 'KRW' | 'USD'
+  price: number
+  quantity: number
+  fee: number
+  tradeDate: string
+  memo?: string
+  createdAt: string
+  accountName?: string
+}
+
+export interface Holding {
+  stockCode: string
+  stockName: string
+  market: 'KR' | 'US'
+  currency: 'KRW' | 'USD'
+  quantity: number
+  avgPrice: number
+  currentPrice: number
+  pnl: number
+  pnlRate: number
+}
+
 export interface Stock {
   code: string
   name: string
@@ -22,11 +52,10 @@ export interface Stock {
 
 export interface Account {
   id: string
-  displayName: string
-}
-
-export interface NewAccount extends Account {
-  broker: string
+  userId: string
+  brokerName: string
   alias: string
-  accountNumber: string
+  accountNumber?: string
+  currency: 'KRW' | 'USD' | 'BOTH'
+  createdAt: string
 }

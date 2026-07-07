@@ -109,8 +109,3 @@ export const dummyStocks: Array<{ code: string; name: string; market: 'KR' | 'US
   { code: 'META', name: 'Meta Platforms', market: 'US', currency: 'USD', price: 560.00 },
 ]
 
-export const dummyAccounts: Array<{ id: string; displayName: string }> = [
-  { id: '1', displayName: 'ISA계좌 (한국투자증권)' },
-  { id: '2', displayName: '일반위탁 (키움증권)' },
-  { id: '3', displayName: '1234-5678 (토스증권)' },
-]

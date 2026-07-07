@@ -1,5 +1,50 @@
 <template>
   <div class="space-y-6">
+    <!-- 인증 상태 (테스트용) -->
+    <section class="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+      <!-- 로그인됨 -->
+      <div v-if="user" class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="flex h-2 w-2 rounded-full bg-green-500" />
+          <span class="text-sm text-muted-foreground">로그인됨:</span>
+          <span class="text-sm font-medium">{{ user.email }}</span>
+        </div>
+        <button
+          class="rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground border border-input hover:bg-accent transition-colors"
+          @click="logout"
+        >
+          로그아웃
+        </button>
+      </div>
+      <!-- 로그아웃 상태 -->
+      <div v-else class="space-y-3">
+        <p class="text-sm font-medium">로그인</p>
+        <div class="flex gap-2">
+          <input
+            v-model="loginForm.email"
+            type="email"
+            placeholder="이메일"
+            class="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+          <input
+            v-model="loginForm.password"
+            type="password"
+            placeholder="비밀번호"
+            class="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            @keydown.enter="login"
+          />
+          <button
+            class="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+            :disabled="loginLoading"
+            @click="login"
+          >
+            {{ loginLoading ? '...' : '로그인' }}
+          </button>
+        </div>
+        <p v-if="loginError" class="text-xs text-destructive">{{ loginError }}</p>
+      </div>
+    </section>
+
     <!-- 나만의 투자 6계명 -->
     <section
       class="overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm"
@@ -249,9 +294,31 @@
 
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Plus } from "@lucide/vue";
-import { DUMMY_TODAY, dummyHoldings, dummyTradeData } from "~/lib/dummy-data";
 import img1 from "~/assets/images/img1.jpg";
 import img2 from "~/assets/images/img2.jpg";
+
+// --- 인증 ---
+const client = useSupabaseClient()
+const user = useSupabaseUser()
+
+const loginForm = reactive({ email: 'test@example.com', password: '' })
+const loginLoading = ref(false)
+const loginError = ref('')
+
+async function login() {
+  loginError.value = ''
+  loginLoading.value = true
+  const { error } = await client.auth.signInWithPassword({
+    email: loginForm.email,
+    password: loginForm.password,
+  })
+  if (error) loginError.value = error.message
+  loginLoading.value = false
+}
+
+async function logout() {
+  await client.auth.signOut()
+}
 
 const RULES = [
   "절대 잃지 않기",
@@ -262,12 +329,16 @@ const RULES = [
   "주요 경제 지표 안 좋으면 일괄 매도 후 예수금 들고 관망",
 ];
 
-const holdings = dummyHoldings;
+const tradesStore = useTradesStore()
+const today = new Date().toISOString().slice(0, 10)
+const holdings = useHoldings(toRef(tradesStore, 'items'))
+
+onMounted(() => tradesStore.fetchAll())
 
 // --- 달력 상태 ---
 
-const viewDate = ref(new Date(2026, 6, 1));
-const selectedDate = ref<string | null>(DUMMY_TODAY);
+const viewDate = ref(new Date());
+const selectedDate = ref<string | null>(today);
 
 const currentYearMonth = computed(() => {
   const year = viewDate.value.getFullYear();
@@ -293,7 +364,7 @@ function formatDate(day: number): string {
 }
 
 function getDayTradeType(day: number): "BUY" | "SELL" | "BOTH" | null {
-  const trades = dummyTradeData[formatDate(day)];
+  const trades = tradesStore.tradesByDate[formatDate(day)];
   if (!trades?.length) return null;
   const hasBuy = trades.some((t) => t.type === "BUY");
   const hasSell = trades.some((t) => t.type === "SELL");
@@ -313,7 +384,7 @@ function selectDate(day: number) {
 function dayClass(day: number) {
   const dateStr = formatDate(day);
   const isSelected = selectedDate.value === dateStr;
-  const isToday = dateStr === DUMMY_TODAY;
+  const isToday = dateStr === today;
   const tradeType = getDayTradeType(day);
 
   if (isSelected)
@@ -338,7 +409,7 @@ function dotClass(day: number): string {
 
 const selectedDateTrades = computed(() => {
   if (!selectedDate.value) return [];
-  return dummyTradeData[selectedDate.value] ?? [];
+  return tradesStore.tradesByDate[selectedDate.value] ?? [];
 });
 
 function prevMonth() {

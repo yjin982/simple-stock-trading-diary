@@ -96,6 +96,10 @@
         />
       </UiFormField>
 
+      <p v-if="tradesStore.error" class="text-xs text-destructive">
+        {{ tradesStore.error }}
+      </p>
+
       <!-- 버튼 -->
       <div class="flex gap-2 pt-1">
         <button
@@ -108,10 +112,10 @@
         <button
           type="submit"
           class="flex-1 rounded-md py-2 text-sm font-semibold text-white transition-colors"
-          :class="isFormValid ? 'bg-primary hover:bg-primary/90' : 'cursor-not-allowed bg-primary/40'"
-          :disabled="!isFormValid"
+          :class="isFormValid && !tradesStore.loading ? 'bg-primary hover:bg-primary/90' : 'cursor-not-allowed bg-primary/40'"
+          :disabled="!isFormValid || tradesStore.loading"
         >
-          저장
+          {{ tradesStore.loading ? '저장 중...' : '저장' }}
         </button>
       </div>
     </form>
@@ -119,8 +123,6 @@
 </template>
 
 <script setup lang="ts">
-import { DUMMY_TODAY } from '~/lib/dummy-data'
-
 interface Props {
   open: boolean
   defaultDate?: string | null
@@ -129,16 +131,22 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   'update:open': [value: boolean]
+  saved: []
 }>()
 
+const tradesStore = useTradesStore()
 const stockSearchRef = ref<{ reset: () => void } | null>(null)
+
+const today = new Date().toISOString().slice(0, 10)
 
 const form = reactive({
   type: 'BUY' as 'BUY' | 'SELL',
-  date: props.defaultDate ?? DUMMY_TODAY,
+  date: props.defaultDate ?? today,
   accountId: '',
   stockName: '',
   stockCode: '',
+  market: '' as 'KR' | 'US' | '',
+  currency: '' as 'KRW' | 'USD' | '',
   price: '',
   quantity: '',
   reason: '',
@@ -161,71 +169,73 @@ const isFormValid = computed(() =>
   Number(form.quantity) > 0,
 )
 
-// 모달이 열릴 때마다 폼 초기화
 watch(
   () => props.open,
   (isOpen) => {
     if (isOpen) {
       Object.assign(form, {
         type: 'BUY',
-        date: props.defaultDate ?? DUMMY_TODAY,
+        date: props.defaultDate ?? today,
         accountId: '',
         stockName: '',
         stockCode: '',
+        market: '',
+        currency: '',
         price: '',
         quantity: '',
         reason: '',
       })
       Object.assign(errors, { date: '', accountId: '', stockCode: '', price: '', quantity: '' })
+      tradesStore.clearError()
       stockSearchRef.value?.reset()
     }
   },
 )
 
-// defaultDate가 변경될 때 날짜 업데이트 (모달이 이미 열려 있는 경우)
 watch(
   () => props.defaultDate,
   (date) => {
-    if (props.open) form.date = date ?? DUMMY_TODAY
+    if (props.open) form.date = date ?? today
   },
 )
 
-function onStockSelect(stock: { code: string; name: string; market: string; currency: 'KRW' | 'USD'; price: number }) {
+function onStockSelect(stock: { code: string; name: string; market: 'KR' | 'US'; currency: 'KRW' | 'USD'; price: number }) {
   form.stockName = stock.name
   form.stockCode = stock.code
-  // 추후 API 연동 전까지 더미 현재가 자동 입력
+  form.market = stock.market
+  form.currency = stock.currency
   form.price = String(stock.price)
   errors.stockCode = ''
 }
 
 function validate(): boolean {
-  let valid = true
   errors.date = form.date ? '' : '거래일을 선택하세요.'
   errors.accountId = form.accountId ? '' : '계좌를 선택하세요.'
   errors.stockCode = form.stockCode ? '' : '종목을 선택하세요.'
   errors.price = form.price ? '' : '단가를 입력하세요.'
-  errors.quantity =
-    form.quantity && Number(form.quantity) > 0 ? '' : '수량을 1 이상 입력하세요.'
-
-  valid = Object.values(errors).every((e) => e === '')
-  return valid
+  errors.quantity = form.quantity && Number(form.quantity) > 0 ? '' : '수량을 1 이상 입력하세요.'
+  return Object.values(errors).every((e) => e === '')
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!validate()) return
 
-  // 더미: 실제 저장 대신 콘솔 출력
-  console.log('매매이력 저장:', {
-    type: form.type,
-    date: form.date,
+  const trade = await tradesStore.add({
     accountId: form.accountId,
-    stockName: form.stockName,
+    type: form.type,
     stockCode: form.stockCode,
-    price: form.price,
-    quantity: form.quantity,
-    reason: form.reason,
+    stockName: form.stockName,
+    market: form.market as 'KR' | 'US',
+    currency: form.currency as 'KRW' | 'USD',
+    price: Number(form.price),
+    quantity: Number(form.quantity),
+    tradeDate: form.date,
+    memo: form.reason || undefined,
   })
 
-  emit('update:open', false)
+  if (trade) {
+    emit('saved')
+    emit('update:open', false)
+  }
 }
 </script>

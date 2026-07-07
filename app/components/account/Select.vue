@@ -71,13 +71,22 @@
 
 <script setup lang="ts">
 import { ChevronDown, Plus } from "@lucide/vue";
-import { dummyAccounts } from "~/lib/dummy-data";
-import type { Account, NewAccount } from '~/types'
 
 const props = defineProps<{ modelValue: string }>();
 const emit = defineEmits<{ "update:modelValue": [id: string] }>();
 
-const accounts = ref<Account[]>([...dummyAccounts]);
+const accountsStore = useAccountsStore()
+
+type AccountOption = { id: string; displayName: string }
+
+const accounts = computed<AccountOption[]>(() =>
+  accountsStore.items.map(a => {
+    const num = a.accountNumber ? ` · ${a.accountNumber}` : ''
+    return { id: a.id, displayName: `${a.alias}${num} (${a.brokerName})` }
+  })
+)
+
+onMounted(() => accountsStore.fetchAll())
 
 const isOpen = ref(false);
 const addModalOpen = ref(false);
@@ -102,7 +111,7 @@ function toggleDropdown() {
   }
 }
 
-function selectAccount(acc: Account) {
+function selectAccount(acc: AccountOption) {
   emit("update:modelValue", acc.id);
   isOpen.value = false;
 }
@@ -114,11 +123,7 @@ function openAddModal() {
   });
 }
 
-function onAccountAdded(newAccount: NewAccount) {
-  accounts.value.push({
-    id: newAccount.id,
-    displayName: newAccount.displayName,
-  });
-  emit("update:modelValue", newAccount.id);
+function onAccountAdded(id: string) {
+  emit("update:modelValue", id);
 }
 </script>

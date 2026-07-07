@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { Briefcase, LayoutDashboard, Menu, ScrollText, TrendingUp, X } from '@lucide/vue'
+import { Briefcase, LayoutDashboard, Menu, ScrollText, TrendingUp, Wallet, X } from '@lucide/vue'
 
 const sidebarOpen = ref(false)
 
@@ -95,6 +95,7 @@ const navItems = [
   { label: '홈', href: '/', icon: LayoutDashboard },
   { label: '매매내역', href: '/trades', icon: ScrollText },
   { label: '보유종목', href: '/holdings', icon: Briefcase },
+  { label: '계좌관리', href: '/accounts', icon: Wallet },
 ]
 </script>
 

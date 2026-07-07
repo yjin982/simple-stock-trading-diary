@@ -7,7 +7,7 @@
 
     <!-- 요약 카드 -->
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <UiCard title="보유 종목" :value="`${dummyHoldings.length}개`" />
+      <UiCard title="보유 종목" :value="`${allHoldings.length}개`" />
       <UiCard
         title="국내 평가금액"
         :value="fmtKRW(summary.krwTotal)"
@@ -190,7 +190,6 @@
 
 <script setup lang="ts">
 import { ArrowDown, ArrowUp, Briefcase, ChevronDown } from "@lucide/vue";
-import { dummyHoldings } from "~/lib/dummy-data";
 
 type Market = "all" | "KR" | "US";
 type SortKey = "pnlRate" | "pnl" | "total" | "name";
@@ -207,6 +206,11 @@ const SORT_OPTIONS: { label: string; value: SortKey }[] = [
   { label: "평가금액", value: "total" },
   { label: "종목명", value: "name" },
 ];
+
+const tradesStore = useTradesStore()
+const allHoldings = useHoldings(toRef(tradesStore, 'items'))
+
+onMounted(() => tradesStore.fetchAll())
 
 const selectedMarket = ref<Market>("all");
 const sortBy = ref<SortKey>("pnlRate");
@@ -231,8 +235,8 @@ function toggleExpand(code: string) {
 // --- 필터 + 정렬 ---
 const filteredHoldings = computed(() =>
   selectedMarket.value === "all"
-    ? dummyHoldings
-    : dummyHoldings.filter((h) => h.market === selectedMarket.value),
+    ? allHoldings.value
+    : allHoldings.value.filter((h) => h.market === selectedMarket.value),
 );
 
 const sortedHoldings = computed(() => {
@@ -258,15 +262,15 @@ const sortedHoldings = computed(() => {
 
 // --- 요약 ---
 const summary = computed(() => {
-  const krw = dummyHoldings.filter((h) => h.currency === "KRW");
-  const usd = dummyHoldings.filter((h) => h.currency === "USD");
+  const krw = allHoldings.value.filter((h) => h.currency === "KRW");
+  const usd = allHoldings.value.filter((h) => h.currency === "USD");
   return {
     krwTotal: krw.reduce((s, h) => s + h.currentPrice * h.quantity, 0),
     krwPnl: krw.reduce((s, h) => s + h.pnl, 0),
     usdTotal: usd.reduce((s, h) => s + h.currentPrice * h.quantity, 0),
     usdPnl: usd.reduce((s, h) => s + h.pnl, 0),
-    avgRate: dummyHoldings.length
-      ? dummyHoldings.reduce((s, h) => s + h.pnlRate, 0) / dummyHoldings.length
+    avgRate: allHoldings.value.length
+      ? allHoldings.value.reduce((s, h) => s + h.pnlRate, 0) / allHoldings.value.length
       : 0,
   };
 });

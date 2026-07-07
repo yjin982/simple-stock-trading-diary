@@ -22,7 +22,7 @@
           <input
             v-model="customStart"
             type="date"
-            :max="customEnd || DUMMY_TODAY"
+            :max="customEnd || today"
             class="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
           <span class="text-sm text-muted-foreground">~</span>
@@ -30,7 +30,7 @@
             v-model="customEnd"
             type="date"
             :min="customStart"
-            :max="DUMMY_TODAY"
+            :max="today"
             class="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
         </template>
@@ -168,7 +168,6 @@
 import { useIntersectionObserver } from '@vueuse/core'
 import { Loader2, Plus, ScrollText } from '@lucide/vue'
 import type { TradeItem } from '~/types'
-import { DUMMY_TODAY, dummyTradeData } from '~/lib/dummy-data'
 
 const PAGE_SIZE = 30
 
@@ -191,6 +190,11 @@ const GROUP_BY_OPTIONS: { label: string; value: GroupBy }[] = [
 type Period = 'all' | '1w' | '1m' | '3m' | 'custom'
 type GroupBy = 'date' | 'stock' | 'type' | 'currency'
 
+const tradesStore = useTradesStore()
+const today = new Date().toISOString().slice(0, 10)
+
+onMounted(() => tradesStore.fetchAll())
+
 const selectedPeriod = ref<Period>('all')
 const customStart = ref('')
 const customEnd = ref('')
@@ -204,20 +208,20 @@ watch([selectedPeriod, customStart, customEnd, groupBy], () => {
 
 const startDate = computed(() => {
   if (selectedPeriod.value === 'custom') return customStart.value || '2000-01-01'
-  if (selectedPeriod.value === '1w') return subtractDays(DUMMY_TODAY, 7)
-  if (selectedPeriod.value === '1m') return subtractDays(DUMMY_TODAY, 30)
-  if (selectedPeriod.value === '3m') return subtractDays(DUMMY_TODAY, 90)
+  if (selectedPeriod.value === '1w') return subtractDays(today, 7)
+  if (selectedPeriod.value === '1m') return subtractDays(today, 30)
+  if (selectedPeriod.value === '3m') return subtractDays(today, 90)
   return '2000-01-01'
 })
 
 const endDate = computed(() => {
-  if (selectedPeriod.value === 'custom') return customEnd.value || DUMMY_TODAY
-  return DUMMY_TODAY
+  if (selectedPeriod.value === 'custom') return customEnd.value || today
+  return today
 })
 
 // --- 날짜별 그룹 ---
 const allDateGroups = computed(() =>
-  Object.entries(dummyTradeData)
+  Object.entries(tradesStore.tradesByDate)
     .sort(([a], [b]) => b.localeCompare(a))
     .map(([date, trades]) => ({ date, trades })),
 )
