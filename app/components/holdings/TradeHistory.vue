@@ -188,21 +188,6 @@ const props = defineProps<{
 
 const tradesStore = useTradesStore();
 
-function daysBetween(from: string, to: string): number {
-  const [fy, fm, fd] = from.split("-").map(Number);
-  const [ty, tm, td] = to.split("-").map(Number);
-  return Math.floor(
-    (new Date(ty!, tm! - 1, td!).getTime() -
-      new Date(fy!, fm! - 1, fd!).getTime()) /
-      86400000,
-  );
-}
-
-function fmtYYMMDD(dateStr: string): string {
-  const [y, m, d] = dateStr.split("-");
-  return `${y!.slice(2)}/${m}/${d}`;
-}
-
 const rows = computed<TradeRow[]>(() => {
   const raw = tradesStore.items
     .filter((t) => t.stockCode === props.stockCode)
@@ -260,8 +245,8 @@ const rows = computed<TradeRow[]>(() => {
         );
         holdingRange = `${fmtYYMMDD(matchedLots[0]!.date)}~${fmtYYMMDD(trade.tradeDate)}`;
 
-        realizedPnl = (trade.price - avgBuyPrice) * totalQty;
-        pnlRate = (realizedPnl / (avgBuyPrice * totalQty)) * 100;
+        realizedPnl = calcRealizedPnl(trade.price, avgBuyPrice, totalQty);
+        pnlRate = calcRealizedPnlRate(realizedPnl, avgBuyPrice, totalQty);
       }
 
       result.push({

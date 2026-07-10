@@ -199,59 +199,19 @@ type AccountHolding = {
 };
 
 function computeHoldings(accountId: string): AccountHolding[] {
-  const trades = tradesStore.items
-    .filter((t) => t.accountId === accountId)
-    .sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
-
-  type Lot = { qty: number; price: number };
-  const positions = new Map<
-    string,
-    {
-      stockCode: string;
-      stockName: string;
-      market: "KR" | "US";
-      currency: "KRW" | "USD";
-      lots: Lot[];
-    }
-  >();
-
-  for (const t of trades) {
-    if (t.type === "BUY") {
-      if (!positions.has(t.stockCode)) {
-        positions.set(t.stockCode, {
-          stockCode: t.stockCode,
-          stockName: t.stockName,
-          market: t.market,
-          currency: t.currency,
-          lots: [],
-        });
-      }
-      positions
-        .get(t.stockCode)!
-        .lots.push({ qty: t.quantity, price: t.price });
-    } else {
-      const pos = positions.get(t.stockCode);
-      if (!pos) continue;
-      let sellQty = t.quantity;
-      while (sellQty > 0 && pos.lots.length > 0) {
-        const lot = pos.lots[0]!;
-        const used = Math.min(sellQty, lot.qty);
-        lot.qty -= used;
-        sellQty -= used;
-        if (lot.qty === 0) pos.lots.shift();
-      }
-    }
-  }
-
+  const trades = tradesStore.items.filter((t) => t.accountId === accountId);
+  const positions = buildFifoPositions(trades);
   const result: AccountHolding[] = [];
+
   for (const pos of positions.values()) {
-    const quantity = pos.lots.reduce((s, l) => s + l.qty, 0);
+    const quantity = lotsQty(pos.lots);
     if (quantity <= 0) continue;
-    const totalCost = pos.lots.reduce((s, l) => s + l.qty * l.price, 0);
-    const avgPrice = totalCost / quantity;
+    const totalCost = lotsCost(pos.lots);
+    const avgPrice = lotsAvgPrice(pos.lots);
     const currentPrice = getDummyPrice(pos.stockCode, avgPrice);
     const evalAmount = currentPrice * quantity;
-    const pnl = evalAmount - totalCost;
+    const pnl = calcPnl(evalAmount, totalCost);
+
     result.push({
       stockCode: pos.stockCode,
       stockName: pos.stockName,
@@ -263,7 +223,7 @@ function computeHoldings(accountId: string): AccountHolding[] {
       currentPrice,
       evalAmount,
       pnl,
-      pnlRate: (pnl / totalCost) * 100,
+      pnlRate: calcPnlRate(pnl, totalCost),
     });
   }
   return result;

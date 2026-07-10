@@ -213,76 +213,27 @@ const accountSummaryById = computed(() => {
   }
 
   for (const [accountId, trades] of byAccount) {
-    const sorted = [...trades].sort((a, b) =>
-      a.tradeDate.localeCompare(b.tradeDate),
-    );
-    type Lot = { qty: number; price: number };
-    const positions = new Map<
-      string,
-      { currency: "KRW" | "USD"; lots: Lot[] }
-    >();
-
-    for (const t of sorted) {
-      if (t.type === "BUY") {
-        if (!positions.has(t.stockCode))
-          positions.set(t.stockCode, { currency: t.currency, lots: [] });
-        positions
-          .get(t.stockCode)!
-          .lots.push({ qty: t.quantity, price: t.price });
-      } else {
-        const pos = positions.get(t.stockCode);
-        if (!pos) continue;
-        let sellQty = t.quantity;
-        while (sellQty > 0 && pos.lots.length > 0) {
-          const lot = pos.lots[0]!;
-          const used = Math.min(sellQty, lot.qty);
-          lot.qty -= used;
-          sellQty -= used;
-          if (lot.qty === 0) pos.lots.shift();
-        }
-      }
-    }
-
+    const positions = buildFifoPositions(trades);
     let holdingCount = 0;
-    let krwCost = 0,
-      krwEval = 0,
-      usdCost = 0,
-      usdEval = 0;
+    let krwCost = 0, krwEval = 0, usdCost = 0, usdEval = 0;
 
-    for (const [code, pos] of positions) {
-      const qty = pos.lots.reduce((s, l) => s + l.qty, 0);
+    for (const pos of positions.values()) {
+      const qty = lotsQty(pos.lots);
       if (qty <= 0) continue;
       holdingCount++;
-      const cost = pos.lots.reduce((s, l) => s + l.qty * l.price, 0);
-      const currentPrice = getDummyPrice(code, cost / qty);
-      const eval_ = currentPrice * qty;
-      if (pos.currency === "KRW") {
-        krwCost += cost;
-        krwEval += eval_;
-      } else {
-        usdCost += cost;
-        usdEval += eval_;
-      }
+      const cost = lotsCost(pos.lots);
+      const evalAmt = getDummyPrice(pos.stockCode, cost / qty) * qty;
+      if (pos.currency === "KRW") { krwCost += cost; krwEval += evalAmt; }
+      else { usdCost += cost; usdEval += evalAmt; }
     }
+
+    const krwPnl = calcPnl(krwEval, krwCost);
+    const usdPnl = calcPnl(usdEval, usdCost);
 
     result.set(accountId, {
       holdingCount,
-      krw:
-        krwCost > 0
-          ? {
-              totalEval: krwEval,
-              pnl: krwEval - krwCost,
-              pnlRate: ((krwEval - krwCost) / krwCost) * 100,
-            }
-          : null,
-      usd:
-        usdCost > 0
-          ? {
-              totalEval: usdEval,
-              pnl: usdEval - usdCost,
-              pnlRate: ((usdEval - usdCost) / usdCost) * 100,
-            }
-          : null,
+      krw: krwCost > 0 ? { totalEval: krwEval, pnl: krwPnl, pnlRate: calcPnlRate(krwPnl, krwCost) } : null,
+      usd: usdCost > 0 ? { totalEval: usdEval, pnl: usdPnl, pnlRate: calcPnlRate(usdPnl, usdCost) } : null,
     });
   }
 

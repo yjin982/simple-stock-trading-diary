@@ -36,3 +36,16 @@ export function subtractDays(dateStr: string, days: number): string {
   dt.setDate(dt.getDate() - days)
   return toDateStr(dt)
 }
+
+export function daysBetween(from: string, to: string): number {
+  const [fy, fm, fd] = parseDateStr(from)
+  const [ty, tm, td] = parseDateStr(to)
+  return Math.floor(
+    (new Date(ty, tm - 1, td).getTime() - new Date(fy, fm - 1, fd).getTime()) / 86400000,
+  )
+}
+
+export function fmtYYMMDD(dateStr: string): string {
+  const [y, m, d] = parseDateStr(dateStr)
+  return `${String(y).slice(2)}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`
+}
