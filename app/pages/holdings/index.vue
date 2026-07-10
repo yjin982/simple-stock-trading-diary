@@ -104,86 +104,72 @@
             </tr>
           </thead>
           <tbody>
-            <template v-for="h in sortedHoldings" :key="h.stockCode">
-              <!-- 메인 행 (현재 보유 수량 기준) -->
-              <tr
-                class="border-b transition-colors hover:bg-muted/30"
-                :class="{ 'border-b-0 bg-muted/10': expanded[h.stockCode] }"
-              >
-                <td
-                  class="cursor-pointer px-4 py-3"
-                  @click="toggleExpand(h.stockCode)"
+            <tr
+              v-for="h in sortedHoldings"
+              :key="h.stockCode"
+              class="border-b last:border-0 transition-colors hover:bg-muted/30"
+            >
+              <td class="px-4 py-3">
+                <NuxtLink
+                  :to="`/holdings/${h.stockCode}`"
+                  class="flex items-center gap-2"
                 >
-                  <div class="flex items-center gap-2">
-                    <ChevronDown
-                      class="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200"
-                      :class="{ 'rotate-180': expanded[h.stockCode] }"
-                    />
-                    <span
-                      class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold"
-                      :class="
-                        h.market === 'KR'
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                          : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                      "
-                    >
-                      {{ h.market }}
-                    </span>
-                    <div>
-                      <div class="font-medium">{{ h.stockName }}</div>
-                      <div class="text-xs text-muted-foreground">
-                        {{ h.stockCode }}
-                      </div>
+                  <span
+                    class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold"
+                    :class="
+                      h.market === 'KR'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                    "
+                  >
+                    {{ h.market }}
+                  </span>
+                  <div>
+                    <div class="font-medium hover:underline">
+                      {{ h.stockName }}
+                    </div>
+                    <div class="text-xs text-muted-foreground">
+                      {{ h.stockCode }}
                     </div>
                   </div>
-                </td>
-                <td class="px-4 py-3 text-right">
-                  {{ h.quantity.toLocaleString() }}
-                </td>
-                <td class="hidden px-4 py-3 text-right sm:table-cell">
-                  {{ fmtCurrency(h.avgPrice, h.currency) }}
-                </td>
-                <td class="px-4 py-3 text-right">
-                  <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
-                  <div
-                    class="text-xs"
-                    :class="pnlColor(h.currentPrice - h.avgPrice)"
-                  >
-                    {{ h.currentPrice >= h.avgPrice ? "▲" : "▼" }}
-                    {{
-                      Math.abs(
-                        ((h.currentPrice - h.avgPrice) / h.avgPrice) * 100,
-                      ).toFixed(2)
-                    }}%
-                  </div>
-                </td>
-                <td class="hidden px-4 py-3 text-right md:table-cell">
-                  {{ fmtCurrency(h.currentPrice * h.quantity, h.currency) }}
-                </td>
-                <td
-                  class="px-4 py-3 text-right font-medium"
-                  :class="pnlColor(h.pnl)"
+                </NuxtLink>
+              </td>
+              <td class="px-4 py-3 text-right">
+                {{ h.quantity.toLocaleString() }}
+              </td>
+              <td class="hidden px-4 py-3 text-right sm:table-cell">
+                {{ fmtCurrency(h.avgPrice, h.currency) }}
+              </td>
+              <td class="px-4 py-3 text-right">
+                <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
+                <div
+                  class="text-xs"
+                  :class="pnlColor(h.currentPrice - h.avgPrice)"
                 >
-                  {{ fmtPnl(h.pnl, h.currency) }}
-                </td>
-                <td
-                  class="px-4 py-3 text-right font-medium"
-                  :class="pnlColor(h.pnlRate)"
-                >
-                  {{ fmtPnlRate(h.pnlRate) }}
-                </td>
-              </tr>
-
-              <!-- 아코디언 상세: 매수-매도 이력 테이블 -->
-              <tr v-if="expanded[h.stockCode]" class="border-b bg-muted">
-                <td colspan="7" class="bg-muted/20 px-6 pb-4 pt-3">
-                  <HoldingsTradeHistory
-                    :stock-code="h.stockCode"
-                    :currency="h.currency"
-                  />
-                </td>
-              </tr>
-            </template>
+                  {{ h.currentPrice >= h.avgPrice ? "▲" : "▼" }}
+                  {{
+                    Math.abs(
+                      ((h.currentPrice - h.avgPrice) / h.avgPrice) * 100,
+                    ).toFixed(2)
+                  }}%
+                </div>
+              </td>
+              <td class="hidden px-4 py-3 text-right md:table-cell">
+                {{ fmtCurrency(h.currentPrice * h.quantity, h.currency) }}
+              </td>
+              <td
+                class="px-4 py-3 text-right font-medium"
+                :class="pnlColor(h.pnl)"
+              >
+                {{ fmtPnl(h.pnl, h.currency) }}
+              </td>
+              <td
+                class="px-4 py-3 text-right font-medium"
+                :class="pnlColor(h.pnlRate)"
+              >
+                {{ fmtPnlRate(h.pnlRate) }}
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -192,7 +178,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowDown, ArrowUp, Briefcase, ChevronDown } from "@lucide/vue";
+import { ArrowDown, ArrowUp, Briefcase } from "@lucide/vue";
 
 type Market = "all" | "KR" | "US";
 type SortKey = "pnlRate" | "pnl" | "total" | "name";
@@ -226,13 +212,6 @@ function setSortBy(key: SortKey) {
     sortBy.value = key;
     sortDesc.value = true;
   }
-}
-
-// --- 아코디언 ---
-const expanded = ref<Record<string, boolean>>({});
-
-function toggleExpand(code: string) {
-  expanded.value[code] = !expanded.value[code];
 }
 
 // --- 필터 + 정렬 ---

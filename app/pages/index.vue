@@ -255,10 +255,12 @@
               class="border-b last:border-0"
             >
               <td class="py-3">
-                <div class="font-medium">{{ holding.stockName }}</div>
-                <div class="text-xs text-muted-foreground">
-                  {{ holding.stockCode }} · {{ holding.market }}
-                </div>
+                <NuxtLink :to="`/holdings/${holding.stockCode}`">
+                  <div class="font-medium hover:underline">{{ holding.stockName }}</div>
+                  <div class="text-xs text-muted-foreground">
+                    {{ holding.stockCode }} · {{ holding.market }}
+                  </div>
+                </NuxtLink>
               </td>
               <td class="py-3 text-right">
                 {{ holding.quantity.toLocaleString() }}

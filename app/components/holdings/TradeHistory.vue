@@ -1,31 +1,47 @@
 <template>
-  <div class="space-y-3">
+  <div class="space-y-5">
     <div class="overflow-x-auto">
-      <table class="w-full table-fixed min-w-[768px] text-xs">
+      <table class="w-full table-fixed min-w-[768px] text-sm">
         <thead>
-          <tr class="border-b border-muted-foreground/50">
-            <th class="pb-2 text-left w-16 font-medium text-muted-foreground">
+          <tr class="border-b">
+            <th
+              class="px-5 pb-2 pt-3 text-left w-20 font-medium text-muted-foreground"
+            >
               날짜
             </th>
-            <th class="pb-2 text-left font-medium text-muted-foreground">
+            <th
+              class="px-5 pb-2 pt-3 text-left font-medium text-muted-foreground"
+            >
               유형
             </th>
-            <th class="pb-2 text-right w-16 font-medium text-muted-foreground">
+            <th
+              class="px-5 pb-2 pt-3 text-right w-18 font-medium text-muted-foreground"
+            >
               수량
             </th>
-            <th class="pb-2 text-right w-28 font-medium text-muted-foreground">
+            <th
+              class="px-5 pb-2 pt-3 text-right w-28 font-medium text-muted-foreground"
+            >
               단가
             </th>
-            <th class="pb-2 text-right w-28 font-medium text-muted-foreground">
+            <th
+              class="px-5 pb-2 pt-3 text-right w-28 font-medium text-muted-foreground"
+            >
               금액
             </th>
-            <th class="pb-2 text-right w-32 font-medium text-muted-foreground">
+            <th
+              class="px-5 pb-2 pt-3 text-right w-32 font-medium text-muted-foreground"
+            >
               평균보유일수
             </th>
-            <th class="pb-2 text-right w-32 font-medium text-muted-foreground">
+            <th
+              class="px-5 pb-2 pt-3 text-right w-24 font-medium text-muted-foreground"
+            >
               수익률
             </th>
-            <th class="pb-2 text-right w-32 font-medium text-muted-foreground">
+            <th
+              class="px-5 pb-2 pt-3 text-right w-32 font-medium text-muted-foreground"
+            >
               실현손익
             </th>
           </tr>
@@ -35,14 +51,14 @@
             <tr
               v-for="(row, i) in displayRows"
               :key="i"
-              class="border-b border-muted/60 last:border-0"
+              class="border-b last:border-0"
             >
-              <td class="py-2 pr-3 whitespace-nowrap">
+              <td class="px-5 py-2.5 align-top whitespace-nowrap">
                 {{ fmtYYMMDD(row.date) }}
               </td>
-              <td class="py-2 pr-3">
+              <td class="px-5 py-2.5 align-top">
                 <span
-                  class="inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                  class="inline-flex rounded px-1.5 py-0.5 text-xs font-semibold"
                   :class="
                     row.type === 'BUY'
                       ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
@@ -51,35 +67,35 @@
                 >
                   {{ row.type === "BUY" ? "매수" : "매도" }}
                 </span>
-                <div
+                <span
                   v-if="row.memo"
-                  class="mt-0.5 max-w-[15rem] truncate text-[10px] text-muted-foreground"
+                  class="ml-4 mt-0.5 max-w-[15rem] truncate text-xs text-muted-foreground"
                 >
                   {{ row.memo }}
-                </div>
+                </span>
               </td>
-              <td class="py-2 text-right">
+              <td class="px-5 py-2.5 align-top text-right">
                 {{ row.quantity.toLocaleString() }}
               </td>
-              <td class="py-2 text-right">
+              <td class="px-5 py-2.5 align-top text-right">
                 {{ fmtCurrency(row.price, currency) }}
               </td>
-              <td class="py-2 text-right">
+              <td class="px-5 py-2.5 align-top text-right">
                 {{ fmtCurrency(row.total, currency) }}
               </td>
               <td
-                class="py-2 text-right text-muted-foreground whitespace-nowrap"
+                class="px-5 py-2.5 align-top text-right text-muted-foreground whitespace-nowrap"
               >
                 <template v-if="row.avgHoldingDays != null">
                   <span>{{ row.avgHoldingDays }}일</span>
-                  <div class="text-[10px] text-muted-foreground/70">
+                  <div class="text-xs text-muted-foreground/70">
                     ({{ row.holdingRange }})
                   </div>
                 </template>
                 <span v-else>—</span>
               </td>
               <td
-                class="py-2 text-right"
+                class="px-5 py-2.5 align-top text-right"
                 :class="
                   row.pnlRate != null
                     ? pnlColor(row.pnlRate)
@@ -89,7 +105,7 @@
                 {{ row.pnlRate != null ? fmtPnlRate(row.pnlRate) : "—" }}
               </td>
               <td
-                class="py-2 text-right font-medium"
+                class="px-5 py-2.5 align-top text-right font-medium"
                 :class="
                   row.realizedPnl != null
                     ? pnlColor(row.realizedPnl)
@@ -114,9 +130,12 @@
     </div>
 
     <!-- 페이지네이션 -->
-    <div v-if="totalPages > 1" class="flex items-center justify-center gap-0.5">
+    <div
+      v-if="totalPages > 1"
+      class="flex items-center justify-center gap-0.5 py-3 px-5"
+    >
       <button
-        class="flex h-6 min-w-[2.5rem] items-center justify-center rounded px-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent disabled:opacity-40"
+        class="flex h-6 min-w-[2.5rem] items-center justify-center rounded px-4 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-40"
         :disabled="currentPage === 1"
         @click="currentPage--"
       >
@@ -125,7 +144,7 @@
       <button
         v-for="n in pageNumbers"
         :key="n"
-        class="flex h-6 w-6 items-center justify-center rounded text-xs transition-colors"
+        class="flex h-6 w-6 items-center justify-center rounded transition-colors"
         :class="
           n === currentPage
             ? 'bg-primary text-primary-foreground font-semibold'
@@ -136,7 +155,7 @@
         {{ n }}
       </button>
       <button
-        class="flex h-6 min-w-[2.5rem] items-center justify-center rounded px-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent disabled:opacity-40"
+        class="flex h-6 min-w-[2.5rem] items-center justify-center rounded px-4 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-40"
         :disabled="currentPage === totalPages"
         @click="currentPage++"
       >

@@ -129,10 +129,10 @@
                 v-if="showStock"
                 :class="['py-2.5 align-top', card ? 'px-4' : '']"
               >
-                <div class="font-medium">{{ trade.stockName }}</div>
-                <div class="text-xs text-muted-foreground">
-                  {{ trade.stockCode }}
-                </div>
+                <NuxtLink :to="`/holdings/${trade.stockCode}`">
+                  <div class="font-medium hover:underline">{{ trade.stockName }}</div>
+                  <div class="text-xs text-muted-foreground">{{ trade.stockCode }}</div>
+                </NuxtLink>
               </td>
               <!-- 계좌 셀 -->
               <td
