@@ -25,14 +25,14 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const valueColorClass = computed(() => ({
-  'text-emerald-600': props.trend === 'positive',
-  'text-red-500': props.trend === 'negative',
+  'text-red-500': props.trend === 'positive',
+  'text-blue-500': props.trend === 'negative',
   'text-foreground': props.trend === 'neutral',
 }))
 
 const subValueColorClass = computed(() => ({
-  'text-emerald-600': props.trend === 'positive',
-  'text-red-500': props.trend === 'negative',
+  'text-red-500': props.trend === 'positive',
+  'text-blue-500': props.trend === 'negative',
   'text-muted-foreground': props.trend === 'neutral',
 }))
 </script>

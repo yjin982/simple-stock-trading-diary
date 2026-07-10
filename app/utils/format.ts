@@ -26,7 +26,7 @@ export function fmtPnlRate(n: number): string {
 }
 
 export function pnlColor(n: number): string {
-  return n >= 0 ? "text-emerald-600" : "text-red-500";
+  return n >= 0 ? "text-red-500" : "text-blue-500";
 }
 
 export function pnlTrend(n: number): "positive" | "negative" {

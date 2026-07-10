@@ -97,18 +97,6 @@
       />
     </div>
 
-    <!-- 매매 이력 목록 (종목별) -->
-    <div v-else-if="groupBy === 'stock' && paginatedStockGroups.length > 0" class="space-y-4">
-      <div v-for="group in paginatedStockGroups" :key="group.stockCode">
-        <div class="mb-2 flex items-center gap-2">
-          <span class="text-sm font-semibold">{{ group.stockName }}</span>
-          <span class="text-xs text-muted-foreground">{{ group.stockCode }}</span>
-          <span class="ml-auto text-xs text-muted-foreground">{{ group.trades.length }}건</span>
-        </div>
-        <TradeHistoryGroup :trades="group.trades" show-account show-date :show-stock="false" />
-      </div>
-    </div>
-
     <!-- 매매 이력 목록 (타입별) -->
     <div v-else-if="groupBy === 'type' && paginatedTypeGroups.length > 0" class="space-y-4">
       <div v-for="group in paginatedTypeGroups" :key="group.type">
@@ -122,18 +110,6 @@
             {{ group.type === 'BUY' ? '매수' : '매도' }}
           </span>
           <span class="text-xs text-muted-foreground">{{ group.trades.length }}건</span>
-        </div>
-        <TradeHistoryGroup :trades="group.trades" show-account show-date />
-      </div>
-    </div>
-
-    <!-- 매매 이력 목록 (통화별) -->
-    <div v-else-if="groupBy === 'currency' && paginatedCurrencyGroups.length > 0" class="space-y-4">
-      <div v-for="group in paginatedCurrencyGroups" :key="group.currency">
-        <div class="mb-2 flex items-center gap-2">
-          <span class="text-sm font-semibold">{{ group.label }}</span>
-          <span class="ml-1 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{{ group.currency }}</span>
-          <span class="ml-auto text-xs text-muted-foreground">{{ group.trades.length }}건</span>
         </div>
         <TradeHistoryGroup :trades="group.trades" show-account show-date />
       </div>
@@ -181,14 +157,12 @@ const PERIODS: { label: string; value: Period }[] = [
 
 const GROUP_BY_OPTIONS: { label: string; value: GroupBy }[] = [
   { label: '날짜별', value: 'date' },
-  { label: '종목별', value: 'stock' },
   { label: '타입별', value: 'type' },
-  { label: '통화별', value: 'currency' },
 ]
 
 // --- 상태 ---
 type Period = 'all' | '1w' | '1m' | '3m' | 'custom'
-type GroupBy = 'date' | 'stock' | 'type' | 'currency'
+type GroupBy = 'date' | 'type'
 
 const tradesStore = useTradesStore()
 const today = new Date().toISOString().slice(0, 10)
@@ -234,32 +208,6 @@ const filteredDateGroups = computed(() => {
 
 const paginatedDateGroups = computed(() => paginateGroups(filteredDateGroups.value, loadedCount.value))
 
-// --- 종목별 그룹 ---
-type StockGroup = { stockName: string; stockCode: string; trades: (TradeItem & { date: string })[] }
-
-const allStockGroups = computed((): StockGroup[] => {
-  const map = new Map<string, StockGroup>()
-  allDateGroups.value.forEach(({ date, trades }) => {
-    trades.forEach(trade => {
-      if (!map.has(trade.stockCode)) {
-        map.set(trade.stockCode, { stockName: trade.stockName, stockCode: trade.stockCode, trades: [] })
-      }
-      map.get(trade.stockCode)!.trades.push({ ...trade, date })
-    })
-  })
-  return [...map.values()].sort((a, b) => a.stockName.localeCompare(b.stockName, 'ko'))
-})
-
-const filteredStockGroups = computed((): StockGroup[] => {
-  const start = startDate.value
-  const end = endDate.value
-  return allStockGroups.value
-    .map(g => ({ ...g, trades: g.trades.filter(t => t.date >= start && t.date <= end) }))
-    .filter(g => g.trades.length > 0)
-})
-
-const paginatedStockGroups = computed(() => paginateGroups(filteredStockGroups.value, loadedCount.value))
-
 // --- 타입별 그룹 ---
 type TypeGroup = { type: 'BUY' | 'SELL'; trades: (TradeItem & { date: string })[] }
 
@@ -285,32 +233,6 @@ const filteredTypeGroups = computed((): TypeGroup[] => {
 })
 
 const paginatedTypeGroups = computed(() => paginateGroups(filteredTypeGroups.value, loadedCount.value))
-
-// --- 통화별 그룹 ---
-type CurrencyGroup = { currency: 'KRW' | 'USD'; label: string; trades: (TradeItem & { date: string })[] }
-
-const filteredCurrencyGroups = computed((): CurrencyGroup[] => {
-  const start = startDate.value
-  const end = endDate.value
-  const krwTrades: (TradeItem & { date: string })[] = []
-  const usdTrades: (TradeItem & { date: string })[] = []
-
-  allDateGroups.value.forEach(({ date, trades }) => {
-    if (date < start || date > end) return
-    trades.forEach(trade => {
-      const item = { ...trade, date }
-      if (trade.currency === 'KRW') krwTrades.push(item)
-      else usdTrades.push(item)
-    })
-  })
-
-  const result: CurrencyGroup[] = []
-  if (krwTrades.length > 0) result.push({ currency: 'KRW', label: '국내주식', trades: krwTrades })
-  if (usdTrades.length > 0) result.push({ currency: 'USD', label: '해외주식', trades: usdTrades })
-  return result
-})
-
-const paginatedCurrencyGroups = computed(() => paginateGroups(filteredCurrencyGroups.value, loadedCount.value))
 
 // --- 기간 요약 ---
 const periodSummary = computed(() => {
@@ -344,15 +266,11 @@ const periodSummary = computed(() => {
 // --- 페이지네이션 ---
 const totalFilteredCount = computed(() => {
   if (groupBy.value === 'date') return filteredDateGroups.value.reduce((s, g) => s + g.trades.length, 0)
-  if (groupBy.value === 'stock') return filteredStockGroups.value.reduce((s, g) => s + g.trades.length, 0)
-  if (groupBy.value === 'currency') return filteredCurrencyGroups.value.reduce((s, g) => s + g.trades.length, 0)
   return filteredTypeGroups.value.reduce((s, g) => s + g.trades.length, 0)
 })
 
 const paginatedCount = computed(() => {
   if (groupBy.value === 'date') return paginatedDateGroups.value.reduce((s, g) => s + g.trades.length, 0)
-  if (groupBy.value === 'stock') return paginatedStockGroups.value.reduce((s, g) => s + g.trades.length, 0)
-  if (groupBy.value === 'currency') return paginatedCurrencyGroups.value.reduce((s, g) => s + g.trades.length, 0)
   return paginatedTypeGroups.value.reduce((s, g) => s + g.trades.length, 0)
 })
 
@@ -370,7 +288,7 @@ async function loadMore() {
 const sentinelRef = ref<HTMLElement | null>(null)
 
 useIntersectionObserver(sentinelRef, ([entry]) => {
-  if (entry.isIntersecting) loadMore()
+  if (entry?.isIntersecting) loadMore()
 })
 
 // --- 팝업 ---

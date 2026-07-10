@@ -72,32 +72,32 @@
                 종목
               </th>
               <th
-                class="px-4 py-3 text-right text-xs font-medium text-muted-foreground"
+                class="px-4 py-3 text-right w-16 text-xs font-medium text-muted-foreground"
               >
                 수량
               </th>
               <th
-                class="hidden px-4 py-3 text-right text-xs font-medium text-muted-foreground sm:table-cell"
+                class="hidden px-4 py-3 text-right w-28 text-xs font-medium text-muted-foreground sm:table-cell"
               >
                 평균단가
               </th>
               <th
-                class="px-4 py-3 text-right text-xs font-medium text-muted-foreground"
+                class="px-4 py-3 text-right text-xs w-28 font-medium text-muted-foreground"
               >
                 현재가
               </th>
               <th
-                class="hidden px-4 py-3 text-right text-xs font-medium text-muted-foreground md:table-cell"
+                class="hidden px-4 py-3 text-right w-32 text-xs font-medium text-muted-foreground md:table-cell"
               >
                 평가금액
               </th>
               <th
-                class="px-4 py-3 text-right text-xs font-medium text-muted-foreground"
+                class="px-4 py-3 text-right w-32 text-xs font-medium text-muted-foreground"
               >
                 평가손익
               </th>
               <th
-                class="px-4 py-3 text-right text-xs font-medium text-muted-foreground"
+                class="px-4 py-3 text-right w-32 text-xs font-medium text-muted-foreground"
               >
                 수익률
               </th>
@@ -177,7 +177,10 @@
               <!-- 아코디언 상세: 매수-매도 이력 테이블 -->
               <tr v-if="expanded[h.stockCode]" class="border-b bg-muted">
                 <td colspan="7" class="bg-muted/20 px-6 pb-4 pt-3">
-                  <HoldingsTradeHistory :stock-code="h.stockCode" :currency="h.currency" />
+                  <HoldingsTradeHistory
+                    :stock-code="h.stockCode"
+                    :currency="h.currency"
+                  />
                 </td>
               </tr>
             </template>
@@ -207,10 +210,10 @@ const SORT_OPTIONS: { label: string; value: SortKey }[] = [
   { label: "종목명", value: "name" },
 ];
 
-const tradesStore = useTradesStore()
-const allHoldings = useHoldings(toRef(tradesStore, 'items'))
+const tradesStore = useTradesStore();
+const allHoldings = useHoldings(toRef(tradesStore, "items"));
 
-onMounted(() => tradesStore.fetchAll())
+onMounted(() => tradesStore.fetchAll());
 
 const selectedMarket = ref<Market>("all");
 const sortBy = ref<SortKey>("pnlRate");
@@ -270,7 +273,8 @@ const summary = computed(() => {
     usdTotal: usd.reduce((s, h) => s + h.currentPrice * h.quantity, 0),
     usdPnl: usd.reduce((s, h) => s + h.pnl, 0),
     avgRate: allHoldings.value.length
-      ? allHoldings.value.reduce((s, h) => s + h.pnlRate, 0) / allHoldings.value.length
+      ? allHoldings.value.reduce((s, h) => s + h.pnlRate, 0) /
+        allHoldings.value.length
       : 0,
   };
 });
