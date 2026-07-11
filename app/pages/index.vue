@@ -1,11 +1,13 @@
 <template>
   <div class="space-y-6">
     <!-- 인증 상태 (테스트용) -->
-    <section class="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+    <section
+      class="p-4 border rounded-lg shadow-sm bg-card text-card-foreground"
+    >
       <!-- 로그인됨 -->
       <div v-if="user" class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <span class="flex h-2 w-2 rounded-full bg-green-500" />
+          <span class="flex w-2 h-2 bg-green-500 rounded-full" />
           <span class="text-sm text-muted-foreground">로그인됨:</span>
           <span class="text-sm font-medium">{{ user.email }}</span>
         </div>
@@ -24,32 +26,34 @@
             v-model="loginForm.email"
             type="email"
             placeholder="이메일"
-            class="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            class="flex-1 px-3 text-sm border rounded-md shadow-sm h-9 border-input bg-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
           <input
             v-model="loginForm.password"
             type="password"
             placeholder="비밀번호"
-            class="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            class="flex-1 px-3 text-sm border rounded-md shadow-sm h-9 border-input bg-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             @keydown.enter="login"
           />
           <button
-            class="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+            class="px-4 text-sm font-medium transition-colors rounded-md h-9 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             :disabled="loginLoading"
             @click="login"
           >
-            {{ loginLoading ? '...' : '로그인' }}
+            {{ loginLoading ? "..." : "로그인" }}
           </button>
         </div>
-        <p v-if="loginError" class="text-xs text-destructive">{{ loginError }}</p>
+        <p v-if="loginError" class="text-xs text-destructive">
+          {{ loginError }}
+        </p>
       </div>
     </section>
 
     <!-- 나만의 투자 6계명 -->
     <section
-      class="overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm"
+      class="overflow-hidden border rounded-lg shadow-sm bg-card text-card-foreground"
     >
-      <div class="grid grid-cols-1 md:grid-cols-2 w-full">
+      <div class="grid w-full grid-cols-1 md:grid-cols-2">
         <img
           :src="img1"
           alt="쌀 때 사서"
@@ -87,13 +91,13 @@
 
     <!-- 요약 카드 + 매매이력 입력 버튼 -->
     <section>
-      <div class="mb-3 flex items-center justify-between">
+      <div class="flex items-center justify-between mb-3">
         <h1 class="text-base font-semibold">포트폴리오 요약</h1>
         <button
           class="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           @click="openModal(null)"
         >
-          <Plus class="h-4 w-4" />
+          <Plus class="w-4 h-4" />
           매매이력 입력
         </button>
       </div>
@@ -123,9 +127,9 @@
 
     <!-- 거래 달력 -->
     <section
-      class="rounded-lg border bg-card p-5 text-card-foreground shadow-sm"
+      class="p-5 border rounded-lg shadow-sm bg-card text-card-foreground"
     >
-      <div class="mb-4 flex items-center justify-between">
+      <div class="flex items-center justify-between mb-4">
         <h2 class="text-sm font-semibold">거래 이력</h2>
         <div class="flex items-center gap-1">
           <button
@@ -133,9 +137,9 @@
             aria-label="이전 달"
             @click="prevMonth"
           >
-            <ChevronLeft class="h-4 w-4" />
+            <ChevronLeft class="w-4 h-4" />
           </button>
-          <span class="w-28 text-center text-sm font-medium">{{
+          <span class="text-sm font-medium text-center w-28">{{
             currentYearMonth
           }}</span>
           <button
@@ -143,17 +147,17 @@
             aria-label="다음 달"
             @click="nextMonth"
           >
-            <ChevronRight class="h-4 w-4" />
+            <ChevronRight class="w-4 h-4" />
           </button>
         </div>
       </div>
 
       <!-- 요일 헤더 -->
-      <div class="mb-1 grid grid-cols-7">
+      <div class="grid grid-cols-7 mb-1">
         <div
           v-for="(day, i) in ['일', '월', '화', '수', '목', '금', '토']"
           :key="day"
-          class="py-1 text-center text-xs text-muted-foreground"
+          class="py-1 text-xs text-center text-muted-foreground"
           :class="{ 'text-red-500': i === 0, 'text-blue-500': i === 6 }"
         >
           {{ day }}
@@ -169,7 +173,7 @@
         >
           <button
             v-if="day !== null"
-            class="relative flex h-8 w-8 flex-col items-center justify-center rounded-full text-sm transition-colors"
+            class="relative flex flex-col items-center justify-center w-8 h-8 text-sm transition-colors rounded-full"
             :class="dayClass(day)"
             @click="selectDate(day)"
           >
@@ -183,7 +187,7 @@
               :class="dotClass(day)"
             />
           </button>
-          <div v-else class="h-8 w-8" />
+          <div v-else class="w-8 h-8" />
         </div>
       </div>
     </section>
@@ -191,9 +195,9 @@
     <!-- 선택일 거래 내역 (날짜 클릭 시 항상 표시) -->
     <section
       v-if="selectedDate"
-      class="rounded-lg border bg-card p-5 text-card-foreground shadow-sm"
+      class="p-5 border rounded-lg shadow-sm bg-card text-card-foreground"
     >
-      <div class="mb-3 flex items-center justify-between">
+      <div class="flex items-center justify-between mb-3">
         <h2 class="text-sm font-semibold">{{ selectedDate }} 거래 내역</h2>
         <button
           class="flex items-center gap-1 rounded-md border border-input bg-background px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
@@ -209,7 +213,7 @@
 
     <!-- 보유 종목 -->
     <section
-      class="rounded-lg border bg-card p-5 text-card-foreground shadow-sm"
+      class="p-5 border rounded-lg shadow-sm bg-card text-card-foreground"
     >
       <h2 class="mb-3 text-sm font-semibold">보유 종목</h2>
       <div class="overflow-x-auto">
@@ -217,32 +221,32 @@
           <thead>
             <tr class="border-b">
               <th
-                class="pb-2 text-left text-xs font-medium text-muted-foreground"
+                class="pb-2 text-xs font-medium text-left text-muted-foreground"
               >
                 종목
               </th>
               <th
-                class="pb-2 text-right text-xs font-medium text-muted-foreground"
+                class="pb-2 text-xs font-medium text-right text-muted-foreground"
               >
                 수량
               </th>
               <th
-                class="pb-2 text-right text-xs font-medium text-muted-foreground hidden sm:table-cell"
+                class="hidden pb-2 text-xs font-medium text-right text-muted-foreground sm:table-cell"
               >
                 평균단가
               </th>
               <th
-                class="pb-2 text-right text-xs font-medium text-muted-foreground"
+                class="pb-2 text-xs font-medium text-right text-muted-foreground"
               >
                 현재가
               </th>
               <th
-                class="pb-2 text-right text-xs font-medium text-muted-foreground"
+                class="pb-2 text-xs font-medium text-right text-muted-foreground"
               >
                 평가손익
               </th>
               <th
-                class="pb-2 text-right text-xs font-medium text-muted-foreground hidden md:table-cell"
+                class="hidden pb-2 text-xs font-medium text-right text-muted-foreground md:table-cell"
               >
                 손익률
               </th>
@@ -256,7 +260,9 @@
             >
               <td class="py-3">
                 <NuxtLink :to="`/holdings/${holding.stockCode}`">
-                  <div class="font-medium hover:underline">{{ holding.stockName }}</div>
+                  <div class="font-medium hover:underline">
+                    {{ holding.stockName }}
+                  </div>
                   <div class="text-xs text-muted-foreground">
                     {{ holding.stockCode }} · {{ holding.market }}
                   </div>
@@ -265,20 +271,20 @@
               <td class="py-3 text-right">
                 {{ holding.quantity.toLocaleString() }}
               </td>
-              <td class="py-3 text-right hidden sm:table-cell">
+              <td class="hidden py-3 text-right sm:table-cell">
                 {{ fmtCurrency(holding.avgPrice, holding.currency) }}
               </td>
               <td class="py-3 text-right">
                 {{ fmtCurrency(holding.currentPrice, holding.currency) }}
               </td>
               <td
-                class="py-3 text-right font-medium"
+                class="py-3 font-medium text-right"
                 :class="pnlColor(holding.pnl)"
               >
                 {{ fmtPnl(holding.pnl, holding.currency) }}
               </td>
               <td
-                class="py-3 text-right hidden md:table-cell"
+                class="hidden py-3 text-right md:table-cell"
                 :class="pnlColor(holding.pnlRate)"
               >
                 {{ fmtPnlRate(holding.pnlRate) }}
@@ -300,26 +306,26 @@ import img1 from "~/assets/images/img1.jpg";
 import img2 from "~/assets/images/img2.jpg";
 
 // --- 인증 ---
-const client = useSupabaseClient()
-const user = useSupabaseUser()
+const client = useSupabaseClient();
+const user = useSupabaseUser();
 
-const loginForm = reactive({ email: 'test@example.com', password: '' })
-const loginLoading = ref(false)
-const loginError = ref('')
+const loginForm = reactive({ email: "test@example.com", password: "" });
+const loginLoading = ref(false);
+const loginError = ref("");
 
 async function login() {
-  loginError.value = ''
-  loginLoading.value = true
+  loginError.value = "";
+  loginLoading.value = true;
   const { error } = await client.auth.signInWithPassword({
     email: loginForm.email,
     password: loginForm.password,
-  })
-  if (error) loginError.value = error.message
-  loginLoading.value = false
+  });
+  if (error) loginError.value = error.message;
+  loginLoading.value = false;
 }
 
 async function logout() {
-  await client.auth.signOut()
+  await client.auth.signOut();
 }
 
 const RULES = [
@@ -331,11 +337,11 @@ const RULES = [
   "주요 경제 지표 안 좋으면 일괄 매도 후 예수금 들고 관망",
 ];
 
-const tradesStore = useTradesStore()
-const today = new Date().toISOString().slice(0, 10)
-const holdings = useHoldings(toRef(tradesStore, 'items'))
+const tradesStore = useTradesStore();
+const today = new Date().toISOString().slice(0, 10);
+const holdings = useHoldings(toRef(tradesStore, "items"));
 
-onMounted(() => tradesStore.fetchAll())
+onMounted(() => tradesStore.fetchAll());
 
 // --- 달력 상태 ---
 

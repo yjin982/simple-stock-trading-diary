@@ -54,6 +54,7 @@
       >
         <TradeStockSearch
           ref="stockSearchRef"
+          :account-currency="selectedAccountCurrency"
           @select="onStockSelect"
         />
       </UiFormField>
@@ -63,7 +64,7 @@
         label="단가"
         required
         :error="errors.price"
-        :hint="form.stockCode ? '종목 선택 시 현재가로 자동 입력됩니다 (수정 가능)' : undefined"
+        hint="단가를 입력하세요."
       >
         <input
           v-model="form.price"
@@ -135,7 +136,13 @@ const emit = defineEmits<{
 }>()
 
 const tradesStore = useTradesStore()
+const accountsStore = useAccountsStore()
 const stockSearchRef = ref<{ reset: () => void } | null>(null)
+
+const selectedAccountCurrency = computed(() => {
+  const acc = accountsStore.items.find(a => a.id === form.accountId)
+  return acc?.currency ?? null
+})
 
 const today = new Date().toISOString().slice(0, 10)
 
@@ -164,7 +171,7 @@ const isFormValid = computed(() =>
   form.date !== '' &&
   form.accountId !== '' &&
   form.stockCode !== '' &&
-  form.price !== '' &&
+  Number(form.price) > 0 &&
   form.quantity !== '' &&
   Number(form.quantity) > 0,
 )
@@ -199,12 +206,25 @@ watch(
   },
 )
 
+watch(
+  () => form.accountId,
+  () => {
+    form.stockName = ''
+    form.stockCode = ''
+    form.market = ''
+    form.currency = ''
+    form.price = ''
+    errors.stockCode = ''
+    // StockSearch 내부의 accountCurrency watcher가 자체 초기화를 처리함
+  },
+)
+
 function onStockSelect(stock: { code: string; name: string; market: 'KR' | 'US'; currency: 'KRW' | 'USD'; price: number }) {
   form.stockName = stock.name
   form.stockCode = stock.code
   form.market = stock.market
   form.currency = stock.currency
-  form.price = String(stock.price)
+  form.price = stock.price > 0 ? String(stock.price) : ''
   errors.stockCode = ''
 }
 
@@ -212,7 +232,7 @@ function validate(): boolean {
   errors.date = form.date ? '' : '거래일을 선택하세요.'
   errors.accountId = form.accountId ? '' : '계좌를 선택하세요.'
   errors.stockCode = form.stockCode ? '' : '종목을 선택하세요.'
-  errors.price = form.price ? '' : '단가를 입력하세요.'
+  errors.price = Number(form.price) > 0 ? '' : '단가를 입력하세요.'
   errors.quantity = form.quantity && Number(form.quantity) > 0 ? '' : '수량을 1 이상 입력하세요.'
   return Object.values(errors).every((e) => e === '')
 }

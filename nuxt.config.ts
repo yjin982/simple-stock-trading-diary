@@ -13,6 +13,9 @@ export default defineNuxtConfig({
     strict: true,
   },
   runtimeConfig: {
+    // 서버 전용 키 — NUXT_ 접두사 env가 자동 주입됨 (클라이언트에 노출 안 됨)
+    dataGoKrServiceKey: "",
+    krxAuthKey: "",
     public: {
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseKey: process.env.SUPABASE_KEY,
