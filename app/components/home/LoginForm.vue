@@ -1,0 +1,56 @@
+<template>
+  <div class="w-full max-w-sm space-y-6">
+    <!-- 타이틀 -->
+    <div class="text-center">
+      <h1 class="text-2xl font-bold tracking-tight">간단 주식 매매 기록하기</h1>
+      <p class="mt-1 text-sm text-muted-foreground">계속하려면 로그인하세요.</p>
+    </div>
+
+    <!-- 로그인 폼 카드 -->
+    <div class="rounded-lg border bg-card p-6 shadow-sm">
+      <p class="mb-4 text-sm font-semibold">로그인</p>
+      <div class="space-y-3">
+        <input
+          v-model="form.email"
+          type="email"
+          placeholder="이메일"
+          class="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        />
+        <input
+          v-model="form.password"
+          type="password"
+          placeholder="비밀번호"
+          class="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          @keydown.enter="login"
+        />
+        <button
+          class="h-9 w-full rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+          :disabled="loading"
+          @click="login"
+        >
+          {{ loading ? "로그인 중..." : "로그인" }}
+        </button>
+      </div>
+      <p v-if="error" class="mt-3 text-xs text-destructive">{{ error }}</p>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+const client = useSupabaseClient()
+
+const form = reactive({ email: '', password: '' })
+const loading = ref(false)
+const error = ref('')
+
+async function login() {
+  error.value = ''
+  loading.value = true
+  const { error: err } = await client.auth.signInWithPassword({
+    email: form.email,
+    password: form.password,
+  })
+  if (err) error.value = err.message
+  loading.value = false
+}
+</script>

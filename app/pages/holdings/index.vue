@@ -179,6 +179,8 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ middleware: 'auth' })
+
 import { ArrowDown, ArrowUp, Briefcase } from "@lucide/vue";
 
 type Market = "all" | "KR" | "US";

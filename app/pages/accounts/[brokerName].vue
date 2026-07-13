@@ -170,6 +170,8 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ middleware: 'auth' })
+
 import { Building2, ChevronLeft, Wallet } from "@lucide/vue";
 
 const route = useRoute();

@@ -181,6 +181,8 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ middleware: 'auth' })
+
 import {
   Building2,
   ChevronRight,

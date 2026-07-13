@@ -141,6 +141,8 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ middleware: 'auth' })
+
 import { useIntersectionObserver } from '@vueuse/core'
 import { Loader2, Plus, ScrollText } from '@lucide/vue'
 import type { TradeItem } from '~/types'

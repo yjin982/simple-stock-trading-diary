@@ -31,7 +31,7 @@
 
         <nav class="flex-1 space-y-1 p-3">
           <NuxtLink
-            v-for="item in navItems"
+            v-for="item in visibleNavItems"
             :key="item.href"
             :to="item.href"
             class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
@@ -42,6 +42,20 @@
             {{ item.label }}
           </NuxtLink>
         </nav>
+
+        <!-- 로그인 상태: 사이드바 하단에 계정 정보 -->
+        <div v-if="user" class="border-t p-3">
+          <div class="mb-2 truncate px-3 py-1 text-xs text-muted-foreground">
+            {{ user.email }}
+          </div>
+          <button
+            class="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
+            @click="logout"
+          >
+            <LogOut class="h-4 w-4 shrink-0" />
+            로그아웃
+          </button>
+        </div>
       </aside>
     </Transition>
 
@@ -66,7 +80,7 @@
         <!-- 데스크탑 네비게이션 -->
         <nav class="ml-4 hidden items-center gap-1 lg:flex">
           <NuxtLink
-            v-for="item in navItems"
+            v-for="item in visibleNavItems"
             :key="item.href"
             :to="item.href"
             class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-foreground/70 transition-colors hover:bg-accent hover:text-foreground"
@@ -76,6 +90,29 @@
             {{ item.label }}
           </NuxtLink>
         </nav>
+
+        <!-- 우측 영역 -->
+        <div class="ml-auto flex items-center gap-2">
+          <!-- 비로그인 -->
+          <NuxtLink
+            v-if="!user"
+            to="/"
+            class="rounded-md border border-input px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            로그인
+          </NuxtLink>
+
+          <!-- 로그인 -->
+          <template v-else>
+            <span class="hidden text-sm text-muted-foreground sm:block">{{ user.email }}</span>
+            <button
+              class="rounded-md border border-input px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              @click="logout"
+            >
+              로그아웃
+            </button>
+          </template>
+        </div>
       </div>
     </header>
 
@@ -87,9 +124,17 @@
 </template>
 
 <script setup lang="ts">
-import { Briefcase, LayoutDashboard, Menu, ScrollText, TrendingUp, Wallet, X } from '@lucide/vue'
+import { Briefcase, LayoutDashboard, LogOut, Menu, ScrollText, TrendingUp, Wallet, X } from '@lucide/vue'
 
+const client = useSupabaseClient()
+const user = useSupabaseUser()
 const sidebarOpen = ref(false)
+
+async function logout() {
+  await client.auth.signOut()
+  sidebarOpen.value = false
+  await navigateTo('/')
+}
 
 const navItems = [
   { label: '홈', href: '/', icon: LayoutDashboard },
@@ -97,6 +142,10 @@ const navItems = [
   { label: '보유종목', href: '/holdings', icon: Briefcase },
   { label: '계좌관리', href: '/accounts', icon: Wallet },
 ]
+
+const visibleNavItems = computed(() =>
+  user.value ? navItems : navItems.filter(item => item.href === '/'),
+)
 </script>
 
 <style scoped>

@@ -90,6 +90,8 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ middleware: 'auth' })
+
 import { Briefcase, ChevronLeft } from "@lucide/vue";
 
 const route = useRoute();
