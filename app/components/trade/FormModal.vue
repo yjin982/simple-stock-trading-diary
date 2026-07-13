@@ -153,6 +153,7 @@ const form = reactive({
   stockName: '',
   stockCode: '',
   market: '' as 'KR' | 'US' | '',
+  exchange: undefined as 'KOSPI' | 'KOSDAQ' | undefined,
   currency: '' as 'KRW' | 'USD' | '',
   price: '',
   quantity: '',
@@ -187,6 +188,7 @@ watch(
         stockName: '',
         stockCode: '',
         market: '',
+        exchange: undefined,
         currency: '',
         price: '',
         quantity: '',
@@ -212,6 +214,7 @@ watch(
     form.stockName = ''
     form.stockCode = ''
     form.market = ''
+    form.exchange = undefined
     form.currency = ''
     form.price = ''
     errors.stockCode = ''
@@ -219,10 +222,11 @@ watch(
   },
 )
 
-function onStockSelect(stock: { code: string; name: string; market: 'KR' | 'US'; currency: 'KRW' | 'USD'; price: number }) {
+function onStockSelect(stock: { code: string; name: string; market: 'KR' | 'US'; exchange?: 'KOSPI' | 'KOSDAQ'; currency: 'KRW' | 'USD'; price: number }) {
   form.stockName = stock.name
   form.stockCode = stock.code
   form.market = stock.market
+  form.exchange = stock.exchange
   form.currency = stock.currency
   form.price = stock.price > 0 ? String(stock.price) : ''
   errors.stockCode = ''
@@ -246,6 +250,7 @@ async function handleSubmit() {
     stockCode: form.stockCode,
     stockName: form.stockName,
     market: form.market as 'KR' | 'US',
+    exchange: form.exchange,
     currency: form.currency as 'KRW' | 'USD',
     price: Number(form.price),
     quantity: Number(form.quantity),

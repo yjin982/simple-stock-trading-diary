@@ -1,17 +1,20 @@
 <template>
   <div class="space-y-5">
     <!-- 헤더 -->
-    <div class="flex items-center gap-3">
-      <NuxtLink
-        to="/accounts"
-        class="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-      >
-        <ChevronLeft class="h-4 w-4" />
-      </NuxtLink>
-      <div class="flex items-center gap-2">
-        <Building2 class="h-4 w-4 text-muted-foreground" />
-        <h1 class="text-base font-semibold">{{ brokerName }}</h1>
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <NuxtLink
+          to="/accounts"
+          class="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <ChevronLeft class="h-4 w-4" />
+        </NuxtLink>
+        <div class="flex items-center gap-2">
+          <Building2 class="h-4 w-4 text-muted-foreground" />
+          <h1 class="text-base font-semibold">{{ brokerName }}</h1>
+        </div>
       </div>
+      <UiPriceDelayNotice :time="priceTime" />
     </div>
 
     <!-- 빈 상태 -->
@@ -184,6 +187,20 @@ const brokerAccounts = computed(() =>
   accountsStore.items.filter((a) => (a.brokerName || "기타") === brokerName),
 );
 
+const brokerTrades = computed(() =>
+  tradesStore.items.filter((t) => brokerAccounts.value.some((a) => a.id === t.accountId)),
+);
+
+const brokerPositions = computed(() => buildFifoPositions(brokerTrades.value));
+
+const yahooSymbols = computed(() =>
+  [...brokerPositions.value.values()]
+    .filter((pos) => lotsQty(pos.lots) > 0)
+    .map((pos) => toYahooSymbol(pos.stockCode, pos.market, pos.exchange)),
+);
+
+const { priceMap, loading: pricesLoading, priceTime } = usePriceMap(yahooSymbols);
+
 type AccountHolding = {
   stockCode: string;
   stockName: string;
@@ -208,7 +225,8 @@ function computeHoldings(accountId: string): AccountHolding[] {
     if (quantity <= 0) continue;
     const totalCost = lotsCost(pos.lots);
     const avgPrice = lotsAvgPrice(pos.lots);
-    const currentPrice = getDummyPrice(pos.stockCode, avgPrice);
+    const sym = toYahooSymbol(pos.stockCode, pos.market, pos.exchange);
+    const currentPrice = priceMap.value[sym] ?? avgPrice;
     const evalAmount = currentPrice * quantity;
     const pnl = calcPnl(evalAmount, totalCost);
 

@@ -4,7 +4,7 @@ interface KrxListedItem {
   basDt: string;
   srtnCd: string;
   isinCd: string;
-  mrktCtg: string;
+  mrktCtg: 'KOSPI' | 'KOSDAQ' | string;
   itmsNm: string;
   crno: string;
   corpNm: string;
@@ -62,6 +62,7 @@ export default defineEventHandler(async (event) => {
         code: item.srtnCd.replace(/^A/, ""),
         name: item.itmsNm,
         market: "KR",
+        exchange: item.mrktCtg as 'KOSPI' | 'KOSDAQ',
         currency: "KRW",
         price: 0,
       }),

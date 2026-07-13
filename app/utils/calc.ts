@@ -6,6 +6,7 @@ export type FifoPosition = {
   stockCode: string
   stockName: string
   market: 'KR' | 'US'
+  exchange?: 'KOSPI' | 'KOSDAQ'
   currency: 'KRW' | 'USD'
   lots: Lot[]
 }
@@ -20,7 +21,7 @@ export function buildFifoPositions(trades: Trade[]): Map<string, FifoPosition> {
       if (!positions.has(t.stockCode)) {
         positions.set(t.stockCode, {
           stockCode: t.stockCode, stockName: t.stockName,
-          market: t.market, currency: t.currency, lots: [],
+          market: t.market, exchange: t.exchange, currency: t.currency, lots: [],
         })
       }
       positions.get(t.stockCode)!.lots.push({ qty: t.quantity, price: t.price })

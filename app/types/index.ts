@@ -20,6 +20,7 @@ export interface Trade {
   stockCode: string
   stockName: string
   market: 'KR' | 'US'
+  exchange?: 'KOSPI' | 'KOSDAQ'
   currency: 'KRW' | 'USD'
   price: number
   quantity: number
@@ -46,9 +47,12 @@ export interface Stock {
   code: string
   name: string
   market: 'KR' | 'US'
+  exchange?: 'KOSPI' | 'KOSDAQ'
   currency: 'KRW' | 'USD'
   price: number
 }
+
+export type QuotePriceMap = Record<string, { price: number; time: string | null }>
 
 export interface Account {
   id: string

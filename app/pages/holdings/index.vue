@@ -3,6 +3,7 @@
     <!-- 헤더 -->
     <div class="flex items-center justify-between">
       <h1 class="text-base font-semibold">보유 종목</h1>
+      <UiPriceDelayNotice :time="priceTime" />
     </div>
 
     <!-- 요약 카드 -->
@@ -197,7 +198,7 @@ const SORT_OPTIONS: { label: string; value: SortKey }[] = [
 ];
 
 const tradesStore = useTradesStore();
-const allHoldings = useHoldings(toRef(tradesStore, "items"));
+const { holdings: allHoldings, pricesLoading, priceTime } = useHoldings(toRef(tradesStore, "items"));
 
 onMounted(() => tradesStore.fetchAll());
 

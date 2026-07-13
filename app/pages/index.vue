@@ -53,22 +53,22 @@
     <section
       class="overflow-hidden border rounded-lg shadow-sm bg-card text-card-foreground"
     >
-      <div class="grid w-full grid-cols-1 md:grid-cols-2">
-        <img
-          :src="img1"
-          alt="쌀 때 사서"
-          class="w-full h-[150px] md:h-[20vh] md:max-h-[220px] md:min-h-[160px] object-contain"
-        />
-        <img
-          :src="img2"
-          alt="비쌀 때 팔아"
-          class="w-full h-[150px] md:h-[20vh] md:max-h-[220px] md:min-h-[160px] object-contain"
-        />
-      </div>
-      <div class="p-4">
-        <div
-          class="grid grid-cols-1 gap-y-2 md:grid-cols-2 md:w-[80%] justify-center md:mx-auto md:gap-x-2"
-        >
+      <div
+        class="grid items-center justify-center w-full grid-cols-1 md:grid-cols-2"
+      >
+        <div class="p-4 space-y-2">
+          <img
+            :src="img1"
+            alt="쌀 때 사서"
+            class="w-full h-[150px] md:h-[20vh] md:max-h-[220px] md:min-h-[160px] object-contain"
+          />
+          <img
+            :src="img2"
+            alt="비쌀 때 팔아"
+            class="w-full h-[150px] md:h-[20vh] md:max-h-[220px] md:min-h-[160px] object-contain"
+          />
+        </div>
+        <div class="p-4">
           <div
             v-for="(rule, i) in RULES"
             :key="i"
@@ -215,7 +215,10 @@
     <section
       class="p-5 border rounded-lg shadow-sm bg-card text-card-foreground"
     >
-      <h2 class="mb-3 text-sm font-semibold">보유 종목</h2>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold">보유 종목</h2>
+        <UiPriceDelayNotice :time="priceTime" />
+      </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
@@ -339,7 +342,9 @@ const RULES = [
 
 const tradesStore = useTradesStore();
 const today = new Date().toISOString().slice(0, 10);
-const holdings = useHoldings(toRef(tradesStore, "items"));
+const { holdings, pricesLoading, priceTime } = useHoldings(
+  toRef(tradesStore, "items"),
+);
 
 onMounted(() => tradesStore.fetchAll());
 

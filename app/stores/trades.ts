@@ -8,6 +8,7 @@ type TradeRow = {
   stock_code: string
   stock_name: string
   market: 'KR' | 'US'
+  exchange: 'KOSPI' | 'KOSDAQ' | null
   currency: 'KRW' | 'USD'
   price: number
   quantity: number
@@ -27,6 +28,7 @@ function mapTrade(row: TradeRow): Trade {
     stockCode: row.stock_code,
     stockName: row.stock_name,
     market: row.market,
+    exchange: row.exchange ?? undefined,
     currency: row.currency,
     price: Number(row.price),
     quantity: Number(row.quantity),
@@ -90,6 +92,7 @@ export const useTradesStore = defineStore('trades', () => {
     stockCode: string
     stockName: string
     market: 'KR' | 'US'
+    exchange?: 'KOSPI' | 'KOSDAQ'
     currency: 'KRW' | 'USD'
     price: number
     quantity: number
@@ -110,6 +113,7 @@ export const useTradesStore = defineStore('trades', () => {
         stock_code: payload.stockCode,
         stock_name: payload.stockName,
         market: payload.market,
+        exchange: payload.exchange ?? null,
         currency: payload.currency,
         price: payload.price,
         quantity: payload.quantity,

@@ -1,15 +1,18 @@
 <template>
   <div class="space-y-6">
     <!-- 헤더 -->
-    <div class="flex items-center justify-between">
-      <h1 class="text-lg font-semibold">계좌 관리</h1>
-      <button
+    <div class="flex flex-col gap-1">
+      <div class="flex items-center justify-between">
+        <h1 class="text-lg font-semibold">계좌 관리</h1>
+        <button
         class="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         @click="openAddModal"
       >
         <Plus class="h-4 w-4" />
         계좌 추가
       </button>
+      </div>
+      <UiPriceDelayNotice :time="priceTime" />
     </div>
 
     <!-- 로딩 -->
@@ -203,6 +206,16 @@ type AccountSummary = {
   usd: { totalEval: number; pnl: number; pnlRate: number } | null;
 };
 
+const allPositions = computed(() => buildFifoPositions(tradesStore.items));
+
+const yahooSymbols = computed(() =>
+  [...allPositions.value.values()]
+    .filter(pos => lotsQty(pos.lots) > 0)
+    .map(pos => toYahooSymbol(pos.stockCode, pos.market, pos.exchange)),
+);
+
+const { priceMap, loading: pricesLoading, priceTime } = usePriceMap(yahooSymbols);
+
 const accountSummaryById = computed(() => {
   const result = new Map<string, AccountSummary>();
 
@@ -222,7 +235,8 @@ const accountSummaryById = computed(() => {
       if (qty <= 0) continue;
       holdingCount++;
       const cost = lotsCost(pos.lots);
-      const evalAmt = getDummyPrice(pos.stockCode, cost / qty) * qty;
+      const sym = toYahooSymbol(pos.stockCode, pos.market, pos.exchange);
+      const evalAmt = (priceMap.value[sym] ?? (cost / qty)) * qty;
       if (pos.currency === "KRW") { krwCost += cost; krwEval += evalAmt; }
       else { usdCost += cost; usdEval += evalAmt; }
     }

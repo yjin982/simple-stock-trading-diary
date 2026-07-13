@@ -1,29 +1,32 @@
 <template>
   <div class="space-y-4">
     <!-- 헤더 -->
-    <div class="flex items-center gap-3">
-      <NuxtLink
-        to="/holdings"
-        class="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-      >
-        <ChevronLeft class="h-4 w-4" />
-      </NuxtLink>
-      <div class="flex items-center gap-2">
-        <span
-          v-if="holding"
-          class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold"
-          :class="
-            holding.market === 'KR'
-              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-              : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-          "
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <NuxtLink
+          to="/holdings"
+          class="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
-          {{ holding.market }}
-        </span>
-        <h1 class="text-base font-semibold">
-          {{ holding?.stockName ?? stockCode }}
-        </h1>
-        <span class="text-xs text-muted-foreground">{{ stockCode }}</span>
+          <ChevronLeft class="w-4 h-4" />
+        </NuxtLink>
+        <div class="flex items-center gap-2">
+          <span
+            v-if="holding"
+            class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold"
+            :class="
+              holding.market === 'KR'
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+            "
+          >
+            {{ holding.market }}
+          </span>
+          <h1 class="text-base font-semibold">
+            {{ holding?.stockName ?? stockCode }}
+          </h1>
+          <span class="text-xs text-muted-foreground">{{ stockCode }}</span>
+        </div>
+        <UiPriceDelayNotice :time="priceTime" />
       </div>
     </div>
 
@@ -73,8 +76,8 @@
       </div>
 
       <!-- 매매 이력 -->
-      <section class="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div class="flex items-center gap-2 border-b px-5 py-3">
+      <section class="border rounded-lg shadow-sm bg-card text-card-foreground">
+        <div class="flex items-center gap-2 px-5 py-3 border-b">
           <span class="font-semibold">매매 이력</span>
         </div>
         <HoldingsTradeHistory
@@ -95,7 +98,11 @@ const stockCode = route.params.stockCode as string;
 const tradesStore = useTradesStore();
 onMounted(() => tradesStore.fetchAll());
 
-const allHoldings = useHoldings(toRef(tradesStore, "items"));
+const {
+  holdings: allHoldings,
+  pricesLoading,
+  priceTime,
+} = useHoldings(toRef(tradesStore, "items"));
 const holding = computed(() =>
   allHoldings.value.find((h) => h.stockCode === stockCode),
 );
