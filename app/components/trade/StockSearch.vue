@@ -157,5 +157,11 @@ function reset() {
   stocks.value = null
 }
 
-defineExpose({ reset })
+function setStock(stock: Stock) {
+  selectedStock.value = stock
+  query.value = ''
+  showDropdown.value = false
+}
+
+defineExpose({ reset, setStock })
 </script>

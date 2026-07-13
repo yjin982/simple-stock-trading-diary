@@ -75,3 +75,38 @@ export function calcRealizedPnlRate(realizedPnl: number, avgBuyPrice: number, qt
   const cost = avgBuyPrice * qty
   return cost > 0 ? (realizedPnl / cost) * 100 : 0
 }
+
+export type RealizedPnl = { KRW: number; USD: number }
+
+// 전체 거래 내역에서 FIFO 방식으로 실현손익을 통화별로 계산
+export function computeRealizedPnl(trades: Trade[]): RealizedPnl {
+  const sorted = [...trades].sort((a, b) => a.tradeDate.localeCompare(b.tradeDate))
+  const queues = new Map<string, { lots: Lot[]; currency: 'KRW' | 'USD' }>()
+  const result: RealizedPnl = { KRW: 0, USD: 0 }
+
+  for (const t of sorted) {
+    if (t.type === 'BUY') {
+      if (!queues.has(t.stockCode)) {
+        queues.set(t.stockCode, { lots: [], currency: t.currency })
+      }
+      queues.get(t.stockCode)!.lots.push({ qty: t.quantity, price: t.price })
+    } else {
+      const queue = queues.get(t.stockCode)
+      if (!queue) continue
+      let sellQty = t.quantity
+      let realized = 0
+      while (sellQty > 0 && queue.lots.length > 0) {
+        const lot = queue.lots[0]!
+        const used = Math.min(sellQty, lot.qty)
+        realized += (t.price - lot.price) * used
+        lot.qty -= used
+        sellQty -= used
+        if (lot.qty === 0) queue.lots.shift()
+      }
+      if (queue.currency === 'KRW') result.KRW += realized
+      else result.USD += realized
+    }
+  }
+
+  return result
+}

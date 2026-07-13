@@ -19,7 +19,7 @@ function getRecentWeekday(): string {
   return d.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
-export default defineEventHandler(async (event) => {
+export default defineCachedEventHandler(async (event) => {
   const { name } = getQuery(event);
   if (!name) {
     throw createError({
@@ -67,4 +67,10 @@ export default defineEventHandler(async (event) => {
         price: 0,
       }),
     );
+}, {
+  maxAge: 60 * 60,
+  getKey: (event) => {
+    const { name } = getQuery(event);
+    return `stock-search:${getRecentWeekday()}:${String(name).toLowerCase().trim()}`;
+  },
 });

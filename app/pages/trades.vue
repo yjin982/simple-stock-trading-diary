@@ -94,6 +94,9 @@
         :date="group.date"
         show-date-header
         show-account
+        show-actions
+        @edit-trade="handleEditTrade"
+        @delete-trade="handleDeleteTrade"
       />
     </div>
 
@@ -111,7 +114,14 @@
           </span>
           <span class="text-xs text-muted-foreground">{{ group.trades.length }}건</span>
         </div>
-        <TradeHistoryGroup :trades="group.trades" show-account show-date />
+        <TradeHistoryGroup
+          :trades="group.trades"
+          show-account
+          show-date
+          show-actions
+          @edit-trade="handleEditTrade"
+          @delete-trade="handleDeleteTrade"
+        />
       </div>
     </div>
 
@@ -135,8 +145,12 @@
       </p>
     </div>
 
-    <!-- 매매이력 입력 팝업 -->
-    <TradeFormModal v-model:open="modalOpen" :default-date="modalDate" />
+    <!-- 매매이력 입력/수정 팝업 -->
+    <TradeFormModal
+      v-model:open="modalOpen"
+      :default-date="modalDate"
+      :edit-trade="editingTrade ?? undefined"
+    />
   </div>
 </template>
 
@@ -145,7 +159,7 @@ definePageMeta({ middleware: 'auth' })
 
 import { useIntersectionObserver } from '@vueuse/core'
 import { Loader2, Plus, ScrollText } from '@lucide/vue'
-import type { TradeItem } from '~/types'
+import type { Trade, TradeItem } from '~/types'
 
 const PAGE_SIZE = 30
 
@@ -296,9 +310,22 @@ useIntersectionObserver(sentinelRef, ([entry]) => {
 // --- 팝업 ---
 const modalOpen = ref(false)
 const modalDate = ref<string | null>(null)
+const editingTrade = ref<Trade | null>(null)
+
+watch(modalOpen, (open) => { if (!open) editingTrade.value = null })
 
 function openModal() {
+  editingTrade.value = null
   modalDate.value = null
   modalOpen.value = true
+}
+
+function handleEditTrade(id: string) {
+  editingTrade.value = tradesStore.items.find(t => t.id === id) ?? null
+  if (editingTrade.value) modalOpen.value = true
+}
+
+async function handleDeleteTrade(id: string) {
+  await tradesStore.remove(id)
 }
 </script>

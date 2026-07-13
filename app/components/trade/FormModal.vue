@@ -1,7 +1,7 @@
 <template>
   <UiDialog
     :open="open"
-    title="매매이력 입력"
+    :title="editTrade ? '매매이력 수정' : '매매이력 입력'"
     @update:open="emit('update:open', $event)"
   >
     <form class="space-y-4 p-5 pb-6" @submit.prevent="handleSubmit">
@@ -116,7 +116,7 @@
           :class="isFormValid && !tradesStore.loading ? 'bg-primary hover:bg-primary/90' : 'cursor-not-allowed bg-primary/40'"
           :disabled="!isFormValid || tradesStore.loading"
         >
-          {{ tradesStore.loading ? '저장 중...' : '저장' }}
+          {{ tradesStore.loading ? '저장 중...' : editTrade ? '수정' : '저장' }}
         </button>
       </div>
     </form>
@@ -124,9 +124,12 @@
 </template>
 
 <script setup lang="ts">
+import type { Trade } from '~/types'
+
 interface Props {
   open: boolean
   defaultDate?: string | null
+  editTrade?: Trade
 }
 
 const props = defineProps<Props>()
@@ -177,10 +180,40 @@ const isFormValid = computed(() =>
   Number(form.quantity) > 0,
 )
 
+const isEditMode = computed(() => !!props.editTrade)
+
 watch(
   () => props.open,
   (isOpen) => {
-    if (isOpen) {
+    if (!isOpen) return
+    Object.assign(errors, { date: '', accountId: '', stockCode: '', price: '', quantity: '' })
+    tradesStore.clearError()
+
+    if (props.editTrade) {
+      Object.assign(form, {
+        type: props.editTrade.type,
+        date: props.editTrade.tradeDate,
+        accountId: props.editTrade.accountId,
+        stockName: props.editTrade.stockName,
+        stockCode: props.editTrade.stockCode,
+        market: props.editTrade.market,
+        exchange: props.editTrade.exchange,
+        currency: props.editTrade.currency,
+        price: String(props.editTrade.price),
+        quantity: String(props.editTrade.quantity),
+        reason: props.editTrade.memo ?? '',
+      })
+      nextTick(() => {
+        stockSearchRef.value?.setStock({
+          code: props.editTrade!.stockCode,
+          name: props.editTrade!.stockName,
+          market: props.editTrade!.market,
+          exchange: props.editTrade!.exchange,
+          currency: props.editTrade!.currency,
+          price: props.editTrade!.price,
+        })
+      })
+    } else {
       Object.assign(form, {
         type: 'BUY',
         date: props.defaultDate ?? today,
@@ -194,8 +227,6 @@ watch(
         quantity: '',
         reason: '',
       })
-      Object.assign(errors, { date: '', accountId: '', stockCode: '', price: '', quantity: '' })
-      tradesStore.clearError()
       stockSearchRef.value?.reset()
     }
   },
@@ -211,6 +242,7 @@ watch(
 watch(
   () => form.accountId,
   () => {
+    if (isEditMode.value) return
     form.stockName = ''
     form.stockCode = ''
     form.market = ''
@@ -218,7 +250,6 @@ watch(
     form.currency = ''
     form.price = ''
     errors.stockCode = ''
-    // StockSearch 내부의 accountCurrency watcher가 자체 초기화를 처리함
   },
 )
 
@@ -244,7 +275,7 @@ function validate(): boolean {
 async function handleSubmit() {
   if (!validate()) return
 
-  const trade = await tradesStore.add({
+  const payload = {
     accountId: form.accountId,
     type: form.type,
     stockCode: form.stockCode,
@@ -256,9 +287,13 @@ async function handleSubmit() {
     quantity: Number(form.quantity),
     tradeDate: form.date,
     memo: form.reason || undefined,
-  })
+  }
 
-  if (trade) {
+  const result = props.editTrade
+    ? await tradesStore.update(props.editTrade.id, payload)
+    : await tradesStore.add(payload)
+
+  if (result) {
     emit('saved')
     emit('update:open', false)
   }

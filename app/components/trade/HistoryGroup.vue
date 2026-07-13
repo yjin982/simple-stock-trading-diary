@@ -80,6 +80,13 @@
               >
                 거래금액
               </th>
+              <th
+                v-if="showActions"
+                :class="[
+                  'pb-2 text-right text-xs w-20 font-medium text-muted-foreground',
+                  card ? 'px-4 pt-3' : '',
+                ]"
+              />
             </tr>
           </thead>
           <tbody>
@@ -158,6 +165,31 @@
               >
                 {{ fmtCurrency(trade.total, trade.currency) }}
               </td>
+              <td
+                v-if="showActions"
+                :class="['py-2.5 text-right align-top whitespace-nowrap', card ? 'px-4' : '']"
+              >
+                <template v-if="deletingId === trade.id">
+                  <button
+                    class="mr-1 rounded px-1.5 py-0.5 text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    @click="confirmDelete(trade.id!)"
+                  >삭제</button>
+                  <button
+                    class="rounded px-1.5 py-0.5 text-xs font-medium border border-input bg-background hover:bg-accent"
+                    @click="deletingId = null"
+                  >취소</button>
+                </template>
+                <template v-else>
+                  <button
+                    class="mr-0.5 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    @click="emit('edit-trade', trade.id!)"
+                  ><Pencil class="h-3.5 w-3.5" /></button>
+                  <button
+                    class="rounded p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
+                    @click="deletingId = trade.id ?? null"
+                  ><Trash2 class="h-3.5 w-3.5" /></button>
+                </template>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -175,7 +207,7 @@
 </template>
 
 <script setup lang="ts">
-import { FileX } from "@lucide/vue";
+import { FileX, Pencil, Trash2 } from "@lucide/vue";
 import type { TradeItem } from "~/types";
 
 interface Props {
@@ -185,6 +217,7 @@ interface Props {
   showAccount?: boolean;
   showDate?: boolean;
   showStock?: boolean;
+  showActions?: boolean;
   card?: boolean;
 }
 
@@ -193,8 +226,21 @@ const props = withDefaults(defineProps<Props>(), {
   showAccount: false,
   showDate: false,
   showStock: true,
+  showActions: false,
   card: true,
 });
+
+const emit = defineEmits<{
+  'edit-trade': [id: string]
+  'delete-trade': [id: string]
+}>()
+
+const deletingId = ref<string | null>(null)
+
+function confirmDelete(id: string) {
+  emit('delete-trade', id)
+  deletingId.value = null
+}
 
 const formattedDate = computed(() =>
   props.date ? formatDateKo(props.date) : "",

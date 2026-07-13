@@ -55,6 +55,7 @@ export const useTradesStore = defineStore('trades', () => {
       const date = trade.tradeDate
       if (!groups[date]) groups[date] = []
       groups[date].push({
+        id: trade.id,
         type: trade.type,
         currency: trade.currency,
         stockName: trade.stockName,
@@ -131,6 +132,48 @@ export const useTradesStore = defineStore('trades', () => {
     return trade
   }
 
+  async function update(id: string, payload: {
+    accountId: string
+    type: 'BUY' | 'SELL'
+    stockCode: string
+    stockName: string
+    market: 'KR' | 'US'
+    exchange?: 'KOSPI' | 'KOSDAQ'
+    currency: 'KRW' | 'USD'
+    price: number
+    quantity: number
+    tradeDate: string
+    memo?: string
+  }): Promise<Trade | null> {
+    error.value = null
+
+    const { data, error: err } = await client
+      .from('trades')
+      .update({
+        account_id: payload.accountId,
+        type: payload.type,
+        stock_code: payload.stockCode,
+        stock_name: payload.stockName,
+        market: payload.market,
+        exchange: payload.exchange ?? null,
+        currency: payload.currency,
+        price: payload.price,
+        quantity: payload.quantity,
+        trade_date: payload.tradeDate,
+        memo: payload.memo || null,
+      })
+      .eq('id', id)
+      .select('*, accounts(alias, broker_name)')
+      .single()
+
+    if (err) { error.value = err.message; return null }
+
+    const trade = mapTrade(data as TradeRow)
+    const idx = items.value.findIndex(t => t.id === id)
+    if (idx >= 0) items.value[idx] = trade
+    return trade
+  }
+
   async function remove(id: string) {
     error.value = null
 
@@ -145,5 +188,5 @@ export const useTradesStore = defineStore('trades', () => {
 
   function clearError() { error.value = null }
 
-  return { items, loading, error, tradesByDate, fetchAll, add, remove, clearError }
+  return { items, loading, error, tradesByDate, fetchAll, add, update, remove, clearError }
 })

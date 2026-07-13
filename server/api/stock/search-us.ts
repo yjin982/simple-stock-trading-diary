@@ -3,7 +3,7 @@ import type { Stock } from "~/types";
 
 const yahooFinance = new YahooFinance();
 
-export default defineEventHandler(async (event) => {
+export default defineCachedEventHandler(async (event) => {
   const { name } = getQuery(event);
   if (!name) {
     throw createError({
@@ -36,4 +36,10 @@ export default defineEventHandler(async (event) => {
         price: 0,
       }),
     );
+}, {
+  maxAge: 60 * 60,
+  getKey: (event) => {
+    const { name } = getQuery(event);
+    return `stock-search-us:${String(name).toLowerCase().trim()}`;
+  },
 });

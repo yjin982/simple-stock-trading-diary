@@ -49,6 +49,10 @@
 </template>
 
 <script setup lang="ts">
-const tradesStore = useTradesStore()
-const { holdings, priceTime } = useHoldings(toRef(tradesStore, 'items'))
+import type { Holding } from '~/types'
+
+defineProps<{
+  holdings: Holding[]
+  priceTime?: string | null
+}>()
 </script>

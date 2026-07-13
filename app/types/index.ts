@@ -1,4 +1,5 @@
 export interface TradeItem {
+  id?: string
   type: 'BUY' | 'SELL'
   currency: 'KRW' | 'USD'
   stockName: string

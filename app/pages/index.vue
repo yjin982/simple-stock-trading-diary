@@ -50,9 +50,15 @@
         </div>
       </section>
 
-      <HomeSummaryCards @open-modal="openModal(null)" />
+      <HomeSummaryCards
+        :holdings="holdings"
+        :trades="tradesStore.items"
+        :price-time="priceTime"
+        :prices-loading="pricesLoading"
+        @open-modal="openModal(null)"
+      />
       <HomeTradeCalendar @open-modal="openModal" />
-      <HomeHoldingsTable />
+      <HomeHoldingsTable :holdings="holdings" :price-time="priceTime" />
     </div>
 
     <TradeFormModal v-model:open="modalOpen" :default-date="modalDate" />
@@ -67,6 +73,8 @@ const user = useSupabaseUser();
 const tradesStore = useTradesStore();
 
 onMounted(() => tradesStore.fetchAll());
+
+const { holdings, pricesLoading, priceTime } = useHoldings(toRef(tradesStore, 'items'))
 
 const RULES = [
   "절대 잃지 않기",
