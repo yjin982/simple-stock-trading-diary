@@ -1,6 +1,6 @@
 import type { Holding, Trade } from '~/types'
 
-export type Summary = {
+type Summary = {
   evalKRW: number
   evalUSD: number
   costKRW: number

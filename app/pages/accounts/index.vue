@@ -216,7 +216,7 @@ const yahooSymbols = computed(() =>
     .map(pos => toYahooSymbol(pos.stockCode, pos.market, pos.exchange)),
 );
 
-const { priceMap, loading: pricesLoading, priceTime } = usePriceMap(yahooSymbols);
+const { priceMap, priceTime } = usePriceMap(yahooSymbols);
 
 const accountSummaryById = computed(() => {
   const result = new Map<string, AccountSummary>();
@@ -268,12 +268,6 @@ const brokersWithAccounts = computed(() => {
     accounts,
   }));
 });
-
-function currencyClass(currency: string) {
-  if (currency === "KRW") return "border-blue-200 bg-blue-50 text-blue-700";
-  if (currency === "USD") return "border-green-200 bg-green-50 text-green-700";
-  return "border-purple-200 bg-purple-50 text-purple-700";
-}
 
 // --- 추가/수정 모달 ---
 const modalOpen = ref(false);

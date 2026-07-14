@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- background: leather brown, rounded square -->
+  <rect width="512" height="512" rx="112" fill="#8B5E3C"/>
+
+  <!-- candlestick chart (rising): navy = up, sage = down -->
+  <!-- candle 1 (down, low) -->
+  <line x1="152" y1="196" x2="152" y2="308" stroke="#F3E4C9" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
+  <rect x="128" y="224" width="48" height="60" rx="8" fill="#D3D4C0"/>
+  <!-- candle 2 (up, mid) -->
+  <line x1="256" y1="140" x2="256" y2="272" stroke="#F3E4C9" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
+  <rect x="232" y="168" width="48" height="76" rx="8" fill="#0A2947"/>
+  <!-- candle 3 (up, high) -->
+  <line x1="360" y1="84" x2="360" y2="236" stroke="#F3E4C9" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
+  <rect x="336" y="112" width="48" height="86" rx="8" fill="#0A2947"/>
+
+  <!-- open diary at bottom: cream paper -->
+  <path d="M256 344 C 224 322, 156 316, 104 328 L104 432 C156 420, 224 426, 256 448 C 288 426, 356 420, 408 432 L408 328 C356 316, 288 322, 256 344 Z" fill="#F3E4C9"/>
+  <!-- center fold -->
+  <path d="M256 344 L256 448" stroke="#D3D4C0" stroke-width="8" stroke-linecap="round"/>
+  <!-- page lines (left) -->
+  <line x1="136" y1="360" x2="224" y2="372" stroke="#D3D4C0" stroke-width="9" stroke-linecap="round"/>
+  <line x1="136" y1="388" x2="224" y2="400" stroke="#D3D4C0" stroke-width="9" stroke-linecap="round"/>
+  <!-- page lines (right) -->
+  <line x1="288" y1="372" x2="376" y2="360" stroke="#D3D4C0" stroke-width="9" stroke-linecap="round"/>
+  <line x1="288" y1="400" x2="376" y2="388" stroke="#D3D4C0" stroke-width="9" stroke-linecap="round"/>
+</svg>

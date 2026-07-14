@@ -8,7 +8,7 @@ export interface TradeItem {
   price: number
   total: number
   accountName?: string
-  reason?: string
+  memo?: string
   date?: string
   pnl?: number
 }

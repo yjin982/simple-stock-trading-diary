@@ -1,8 +1,9 @@
 <template>
   <div class="w-full max-w-sm space-y-6">
-    <!-- 타이틀 -->
+    <!-- 로고 + 타이틀 -->
     <div class="text-center">
-      <h1 class="text-2xl font-bold tracking-tight">간단 주식 매매 기록하기</h1>
+      <img src="/logo.svg" alt="로고" class="w-16 h-16 mx-auto mb-4" />
+      <h1 class="text-2xl font-bold tracking-tight">간단 주식 매매 다이어리</h1>
       <p class="mt-1 text-sm text-muted-foreground">계속하려면 로그인하세요.</p>
     </div>
 

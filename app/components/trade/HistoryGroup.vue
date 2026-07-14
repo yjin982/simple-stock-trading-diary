@@ -117,17 +117,17 @@
                   {{ trade.type === "BUY" ? "매수" : "매도" }}
                 </span>
                 <div
-                  v-if="trade.reason"
+                  v-if="trade.memo"
                   class="relative group mt-0.5 max-w-[10rem]"
                 >
                   <div class="truncate text-xs text-muted-foreground">
-                    {{ trade.reason }}
+                    {{ trade.memo }}
                   </div>
 
                   <div
                     class="absolute left-0 bottom-full mb-1 hidden group-hover:block z-50 max-w-xs whitespace-normal rounded bg-slate-900/50 px-2 py-1 text-[10px] font-medium text-slate-50 shadow-md dark:bg-slate-100/50 dark:text-slate-900"
                   >
-                    {{ trade.reason }}
+                    {{ trade.memo }}
                   </div>
                 </div>
               </td>

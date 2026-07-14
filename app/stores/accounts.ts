@@ -82,7 +82,7 @@ export const useAccountsStore = defineStore('accounts', () => {
       accountNumber?: string
       currency?: 'KRW' | 'USD' | 'BOTH'
     },
-  ) {
+  ): Promise<Account | null> {
     error.value = null
 
     const { data, error: err } = await client
@@ -97,10 +97,12 @@ export const useAccountsStore = defineStore('accounts', () => {
       .select()
       .single()
 
-    if (err) { error.value = err.message; return }
+    if (err) { error.value = err.message; return null }
 
+    const account = mapAccount(data as AccountRow)
     const idx = items.value.findIndex(a => a.id === id)
-    if (idx !== -1) items.value[idx] = mapAccount(data as AccountRow)
+    if (idx !== -1) items.value[idx] = account
+    return account
   }
 
   async function remove(id: string) {

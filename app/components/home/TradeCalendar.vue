@@ -1,5 +1,30 @@
 <template>
   <div class="space-y-4">
+    <!-- 월 요약 카드 -->
+    <section class="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+      <p class="mb-3 text-xs font-medium text-muted-foreground">{{ currentYearMonth }} 요약</p>
+      <div class="grid grid-cols-2 divide-x">
+        <div class="pr-4">
+          <p class="text-xs text-muted-foreground">매수</p>
+          <template v-if="monthlySummary.buyKRW || monthlySummary.buyUSD">
+            <p v-if="monthlySummary.buyKRW" class="mt-1 text-sm font-semibold text-red-600">{{ fmtKRW(monthlySummary.buyKRW) }}</p>
+            <p v-if="monthlySummary.buyUSD" class="text-xs text-red-500">{{ fmtUSD(monthlySummary.buyUSD) }}</p>
+          </template>
+          <p v-else class="mt-1 text-sm text-muted-foreground">—</p>
+          <p class="mt-0.5 text-xs text-muted-foreground">{{ monthlySummary.buyCount }}건</p>
+        </div>
+        <div class="pl-4">
+          <p class="text-xs text-muted-foreground">매도</p>
+          <template v-if="monthlySummary.sellKRW || monthlySummary.sellUSD">
+            <p v-if="monthlySummary.sellKRW" class="mt-1 text-sm font-semibold text-blue-600">{{ fmtKRW(monthlySummary.sellKRW) }}</p>
+            <p v-if="monthlySummary.sellUSD" class="text-xs text-blue-500">{{ fmtUSD(monthlySummary.sellUSD) }}</p>
+          </template>
+          <p v-else class="mt-1 text-sm text-muted-foreground">—</p>
+          <p class="mt-0.5 text-xs text-muted-foreground">{{ monthlySummary.sellCount }}건</p>
+        </div>
+      </div>
+    </section>
+
     <!-- 거래 달력 -->
     <section class="p-5 border rounded-lg shadow-sm bg-card text-card-foreground">
       <div class="mb-4 flex items-center justify-between">
@@ -75,7 +100,13 @@
           매매이력 입력
         </button>
       </div>
-      <TradeHistoryGroup :trades="selectedDateTrades" :card="false" />
+      <TradeHistoryGroup
+        :trades="selectedDateTrades"
+        :card="false"
+        show-actions
+        @edit-trade="emit('edit-trade', $event)"
+        @delete-trade="emit('delete-trade', $event)"
+      />
     </section>
   </div>
 </template>
@@ -83,7 +114,11 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Plus } from '@lucide/vue'
 
-const emit = defineEmits<{ 'open-modal': [date: string] }>()
+const emit = defineEmits<{
+  'open-modal': [date: string]
+  'edit-trade': [id: string]
+  'delete-trade': [id: string]
+}>()
 
 const tradesStore = useTradesStore()
 const today = new Date().toISOString().slice(0, 10)
@@ -151,6 +186,32 @@ function dotClass(day: number): string {
 const selectedDateTrades = computed(() =>
   selectedDate.value ? (tradesStore.tradesByDate[selectedDate.value] ?? []) : [],
 )
+
+const currentYearMonthPrefix = computed(() => {
+  const y = viewDate.value.getFullYear()
+  const m = String(viewDate.value.getMonth() + 1).padStart(2, '0')
+  return `${y}-${m}`
+})
+
+const monthlySummary = computed(() => {
+  const prefix = currentYearMonthPrefix.value
+  let buyKRW = 0, buyUSD = 0, sellKRW = 0, sellUSD = 0, buyCount = 0, sellCount = 0
+  for (const [date, trades] of Object.entries(tradesStore.tradesByDate)) {
+    if (!date.startsWith(prefix)) continue
+    for (const t of trades) {
+      if (t.type === 'BUY') {
+        buyCount++
+        if (t.currency === 'KRW') buyKRW += t.total
+        else buyUSD += t.total
+      } else {
+        sellCount++
+        if (t.currency === 'KRW') sellKRW += t.total
+        else sellUSD += t.total
+      }
+    }
+  }
+  return { buyKRW, buyUSD, sellKRW, sellUSD, buyCount, sellCount }
+})
 
 function prevMonth() {
   selectedDate.value = null

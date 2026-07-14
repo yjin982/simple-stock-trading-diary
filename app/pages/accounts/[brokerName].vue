@@ -330,9 +330,4 @@ const accountsWithHoldings = computed(() =>
   }),
 );
 
-function currencyClass(currency: string) {
-  if (currency === "KRW") return "border-blue-200 bg-blue-50 text-blue-700";
-  if (currency === "USD") return "border-green-200 bg-green-50 text-green-700";
-  return "border-purple-200 bg-purple-50 text-purple-700";
-}
 </script>

@@ -90,7 +90,7 @@
       <!-- 매수/매도 이유 -->
       <UiFormField :label="form.type === 'BUY' ? '매수 이유' : '매도 이유'">
         <textarea
-          v-model="form.reason"
+          v-model="form.memo"
           rows="2"
           placeholder="이유를 입력하세요 (선택)"
           class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
@@ -160,7 +160,7 @@ const form = reactive({
   currency: '' as 'KRW' | 'USD' | '',
   price: '',
   quantity: '',
-  reason: '',
+  memo: '',
 })
 
 const errors = reactive({
@@ -201,7 +201,7 @@ watch(
         currency: props.editTrade.currency,
         price: String(props.editTrade.price),
         quantity: String(props.editTrade.quantity),
-        reason: props.editTrade.memo ?? '',
+        memo: props.editTrade.memo ?? '',
       })
       nextTick(() => {
         stockSearchRef.value?.setStock({
@@ -225,7 +225,7 @@ watch(
         currency: '',
         price: '',
         quantity: '',
-        reason: '',
+        memo: '',
       })
       stockSearchRef.value?.reset()
     }
@@ -286,7 +286,7 @@ async function handleSubmit() {
     price: Number(form.price),
     quantity: Number(form.quantity),
     tradeDate: form.date,
-    memo: form.reason || undefined,
+    memo: form.memo || undefined,
   }
 
   const result = props.editTrade
