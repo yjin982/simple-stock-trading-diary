@@ -25,7 +25,6 @@ export interface Trade {
   currency: 'KRW' | 'USD'
   price: number
   quantity: number
-  fee: number
   tradeDate: string
   memo?: string
   createdAt: string

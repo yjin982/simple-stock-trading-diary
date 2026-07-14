@@ -12,7 +12,6 @@ type TradeRow = {
   currency: 'KRW' | 'USD'
   price: number
   quantity: number
-  fee: number
   trade_date: string
   memo: string | null
   created_at: string
@@ -32,7 +31,6 @@ function mapTrade(row: TradeRow): Trade {
     currency: row.currency,
     price: Number(row.price),
     quantity: Number(row.quantity),
-    fee: Number(row.fee),
     tradeDate: row.trade_date.slice(0, 10),
     memo: row.memo ?? undefined,
     createdAt: row.created_at,
@@ -118,7 +116,6 @@ export const useTradesStore = defineStore('trades', () => {
         currency: payload.currency,
         price: payload.price,
         quantity: payload.quantity,
-        fee: 0,
         trade_date: payload.tradeDate,
         memo: payload.memo || null,
       })

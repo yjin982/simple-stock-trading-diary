@@ -5,45 +5,54 @@
         <thead>
           <tr class="border-b">
             <th
-              class="px-5 pb-2 pt-3 text-left w-20 font-medium text-muted-foreground"
+              class="w-20 px-5 pt-3 pb-2 font-medium text-left text-muted-foreground"
             >
               날짜
             </th>
             <th
-              class="px-5 pb-2 pt-3 text-left font-medium text-muted-foreground"
+              class="w-16 px-3.5 pt-3 pb-2 font-medium text-center text-muted-foreground"
             >
               유형
             </th>
             <th
-              class="px-5 pb-2 pt-3 text-right w-18 font-medium text-muted-foreground"
+              class="px-2 pt-3 pb-2 font-medium text-left text-muted-foreground"
+            >
+              메모
+            </th>
+            <th
+              class="w-16 px-2 pt-3 pb-2 font-medium text-right w-18 text-muted-foreground"
             >
               수량
             </th>
             <th
-              class="px-5 pb-2 pt-3 text-right w-28 font-medium text-muted-foreground"
+              class="px-5 pt-3 pb-2 font-medium text-right w-28 text-muted-foreground"
             >
               단가
             </th>
             <th
-              class="px-5 pb-2 pt-3 text-right w-28 font-medium text-muted-foreground"
+              class="px-5 pt-3 pb-2 font-medium text-right w-28 text-muted-foreground"
             >
               금액
             </th>
             <th
-              class="px-5 pb-2 pt-3 text-right w-32 font-medium text-muted-foreground"
+              class="w-32 px-5 pt-3 pb-2 font-medium text-right text-muted-foreground"
             >
               평균보유일수
             </th>
             <th
-              class="px-5 pb-2 pt-3 text-right w-24 font-medium text-muted-foreground"
+              class="w-24 px-5 pt-3 pb-2 font-medium text-right text-muted-foreground"
             >
               수익률
             </th>
             <th
-              class="px-5 pb-2 pt-3 text-right w-32 font-medium text-muted-foreground"
+              class="w-32 px-5 pt-3 pb-2 font-medium text-right text-muted-foreground"
             >
               실현손익
             </th>
+            <th
+              v-if="showActions"
+              class="w-20 px-5 pt-3 pb-2 font-medium text-right text-muted-foreground"
+            />
           </tr>
         </thead>
         <tbody>
@@ -53,10 +62,10 @@
               :key="i"
               class="border-b last:border-0"
             >
-              <td class="px-5 py-2.5 align-top whitespace-nowrap">
+              <td class="px-5 py-2.5 align-center whitespace-nowrap">
                 {{ fmtYYMMDD(row.date) }}
               </td>
-              <td class="px-5 py-2.5 align-top">
+              <td class="px-2 py-2.5 align-center justify-center text-center">
                 <span
                   class="inline-flex rounded px-1.5 py-0.5 text-xs font-semibold"
                   :class="
@@ -67,35 +76,43 @@
                 >
                   {{ row.type === "BUY" ? "매수" : "매도" }}
                 </span>
-                <span
-                  v-if="row.memo"
-                  class="ml-4 mt-0.5 max-w-[15rem] truncate text-xs text-muted-foreground"
-                >
-                  {{ row.memo }}
-                </span>
               </td>
-              <td class="px-5 py-2.5 align-top text-right">
+              <td class="px-2 py-2.5 align-center">
+                <div v-if="row.memo" class="relative group">
+                  <div class="text-xs text-muted-foreground">
+                    {{ row.memo }}
+                  </div>
+                </div>
+                <span v-else class="text-muted-foreground">—</span>
+              </td>
+              <td class="px-2 py-2.5 align-center text-right">
                 {{ row.quantity.toLocaleString() }}
               </td>
-              <td class="px-5 py-2.5 align-top text-right">
+              <td class="px-5 py-2.5 align-center text-right">
                 {{ fmtCurrency(row.price, currency) }}
               </td>
-              <td class="px-5 py-2.5 align-top text-right">
+              <td class="px-5 py-2.5 align-center text-right">
                 {{ fmtCurrency(row.total, currency) }}
               </td>
               <td
-                class="px-5 py-2.5 align-top text-right text-muted-foreground whitespace-nowrap"
+                class="px-5 py-2.5 align-center text-right text-muted-foreground whitespace-nowrap"
               >
                 <template v-if="row.avgHoldingDays != null">
-                  <span>{{ row.avgHoldingDays }}일</span>
-                  <div class="text-xs text-muted-foreground/70">
-                    ({{ row.holdingRange }})
+                  <div class="relative inline-block group">
+                    <span class="underline cursor-default decoration-dotted"
+                      >{{ row.avgHoldingDays }}일</span
+                    >
+                    <div
+                      class="absolute right-0 bottom-full mb-1 hidden group-hover:block z-50 whitespace-nowrap rounded bg-slate-900/50 px-2 py-1 text-[10px] font-medium text-slate-50 shadow-md dark:bg-slate-100/50 dark:text-slate-900"
+                    >
+                      {{ row.holdingRange }}
+                    </div>
                   </div>
                 </template>
                 <span v-else>—</span>
               </td>
               <td
-                class="px-5 py-2.5 align-top text-right"
+                class="px-5 py-2.5 align-center text-right"
                 :class="
                   row.pnlRate != null
                     ? pnlColor(row.pnlRate)
@@ -105,7 +122,7 @@
                 {{ row.pnlRate != null ? fmtPnlRate(row.pnlRate) : "—" }}
               </td>
               <td
-                class="px-5 py-2.5 align-top text-right font-medium"
+                class="px-5 py-2.5 align-center text-right font-medium"
                 :class="
                   row.realizedPnl != null
                     ? pnlColor(row.realizedPnl)
@@ -118,10 +135,46 @@
                     : "—"
                 }}
               </td>
+              <td
+                v-if="showActions"
+                class="px-5 py-2.5 align-center text-right whitespace-nowrap"
+              >
+                <template v-if="deletingId === row.id">
+                  <button
+                    class="mr-1 rounded px-1.5 py-0.5 text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    @click="confirmDelete(row.id!)"
+                  >
+                    삭제
+                  </button>
+                  <button
+                    class="rounded px-1.5 py-0.5 text-xs font-medium border border-input bg-background hover:bg-accent"
+                    @click="deletingId = null"
+                  >
+                    취소
+                  </button>
+                </template>
+                <template v-else>
+                  <button
+                    class="mr-0.5 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    @click="emit('edit-trade', row.id!)"
+                  >
+                    <Pencil class="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    class="p-1 rounded text-muted-foreground hover:bg-accent hover:text-destructive"
+                    @click="deletingId = row.id ?? null"
+                  >
+                    <Trash2 class="h-3.5 w-3.5" />
+                  </button>
+                </template>
+              </td>
             </tr>
           </template>
           <tr v-else>
-            <td colspan="8" class="py-3 text-center text-muted-foreground">
+            <td
+              :colspan="showActions ? 10 : 9"
+              class="py-3 text-center text-muted-foreground"
+            >
               거래 내역이 없습니다
             </td>
           </tr>
@@ -144,7 +197,7 @@
       <button
         v-for="n in pageNumbers"
         :key="n"
-        class="flex h-6 w-6 items-center justify-center rounded transition-colors"
+        class="flex items-center justify-center w-6 h-6 transition-colors rounded"
         :class="
           n === currentPage
             ? 'bg-primary text-primary-foreground font-semibold'
@@ -166,7 +219,10 @@
 </template>
 
 <script setup lang="ts">
+import { Pencil, Trash2 } from "@lucide/vue";
+
 interface TradeRow {
+  id?: string;
   date: string;
   type: "BUY" | "SELL";
   quantity: number;
@@ -184,7 +240,20 @@ const PAGE_SIZE = 5;
 const props = defineProps<{
   stockCode: string;
   currency: "KRW" | "USD";
+  showActions?: boolean;
 }>();
+
+const emit = defineEmits<{
+  "edit-trade": [id: string];
+  "delete-trade": [id: string];
+}>();
+
+const deletingId = ref<string | null>(null);
+
+function confirmDelete(id: string) {
+  emit("delete-trade", id);
+  deletingId.value = null;
+}
 
 const tradesStore = useTradesStore();
 
@@ -205,6 +274,7 @@ const rows = computed<TradeRow[]>(() => {
         price: trade.price,
       });
       result.push({
+        id: trade.id,
         date: trade.tradeDate,
         type: "BUY",
         quantity: trade.quantity,
@@ -250,6 +320,7 @@ const rows = computed<TradeRow[]>(() => {
       }
 
       result.push({
+        id: trade.id,
         date: trade.tradeDate,
         type: "SELL",
         quantity: trade.quantity,

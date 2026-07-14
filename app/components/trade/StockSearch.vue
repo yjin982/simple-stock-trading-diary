@@ -95,14 +95,14 @@ const searchEndpoint = computed<string>(() =>
   props.accountCurrency === 'KRW' ? '/api/stock/search' : '/api/stock/search-us'
 )
 
-const { data: stocks, status, execute } = await useFetch<Stock[]>(searchEndpoint, {
+const { data: stocks, status, execute } = useFetch<Stock[]>(searchEndpoint, {
   query: { name: query },
   immediate: false,
   watch: false,
 })
 
 watch(() => props.accountCurrency, () => {
-  stocks.value = null
+  stocks.value = undefined
   query.value = ''
   selectedStock.value = null
   highlightedIndex.value = -1
@@ -113,7 +113,7 @@ function onInput() {
   selectedStock.value = null
   highlightedIndex.value = -1
   showDropdown.value = true
-  stocks.value = null
+  stocks.value = undefined
 }
 
 function selectStock(stock: Stock) {
@@ -154,7 +154,7 @@ function reset() {
   selectedStock.value = null
   showDropdown.value = false
   highlightedIndex.value = -1
-  stocks.value = null
+  stocks.value = undefined
 }
 
 function setStock(stock: Stock) {

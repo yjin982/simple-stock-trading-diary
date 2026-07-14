@@ -28,7 +28,7 @@
 
     <!-- 계좌별 보유 현황 -->
     <section
-      v-for="{ account, holdings } in accountsWithHoldings"
+      v-for="{ account, holdings, summary } in accountsWithHoldings"
       :key="account.id"
       class="rounded-lg border bg-card text-card-foreground shadow-sm"
     >
@@ -50,6 +50,38 @@
         <span class="ml-auto text-xs text-muted-foreground"
           >{{ holdings.length }}종목</span
         >
+      </div>
+
+      <!-- 계좌 요약 -->
+      <div class="grid grid-cols-2 divide-x divide-y border-b sm:grid-cols-4 sm:divide-y-0">
+        <div class="px-5 py-3">
+          <p class="text-xs text-muted-foreground">평가금액</p>
+          <p class="mt-1 text-sm font-semibold">
+            {{ summary.hasKRW ? fmtKRW(summary.evalKRW) : fmtUSD(summary.evalUSD) }}
+          </p>
+          <p v-if="summary.hasKRW && summary.hasUSD" class="text-xs text-muted-foreground">{{ fmtUSD(summary.evalUSD) }}</p>
+        </div>
+        <div class="px-5 py-3">
+          <p class="text-xs text-muted-foreground">미실현손익</p>
+          <p class="mt-1 text-sm font-semibold" :class="pnlColor(summary.hasKRW ? summary.unrealizedKRW : summary.unrealizedUSD)">
+            {{ summary.hasKRW ? fmtPnl(summary.unrealizedKRW, 'KRW') : fmtPnl(summary.unrealizedUSD, 'USD') }}
+          </p>
+          <p v-if="summary.hasKRW && summary.hasUSD" class="text-xs" :class="pnlColor(summary.unrealizedUSD)">{{ fmtPnl(summary.unrealizedUSD, 'USD') }}</p>
+        </div>
+        <div class="px-5 py-3">
+          <p class="text-xs text-muted-foreground">실현손익</p>
+          <p class="mt-1 text-sm font-semibold" :class="pnlColor(summary.hasKRW ? summary.realizedKRW : summary.realizedUSD)">
+            {{ summary.hasKRW ? fmtPnl(summary.realizedKRW, 'KRW') : fmtPnl(summary.realizedUSD, 'USD') }}
+          </p>
+          <p v-if="summary.hasKRW && summary.hasUSD" class="text-xs" :class="pnlColor(summary.realizedUSD)">{{ fmtPnl(summary.realizedUSD, 'USD') }}</p>
+        </div>
+        <div class="px-5 py-3">
+          <p class="text-xs text-muted-foreground">수익률</p>
+          <p class="mt-1 text-sm font-semibold" :class="pnlColor(summary.hasKRW ? summary.returnKRW : summary.returnUSD)">
+            {{ summary.hasKRW ? fmtPnlRate(summary.returnKRW) : fmtPnlRate(summary.returnUSD) }}
+          </p>
+          <p v-if="summary.hasKRW && summary.hasUSD" class="text-xs" :class="pnlColor(summary.returnUSD)">{{ fmtPnlRate(summary.returnUSD) }}</p>
+        </div>
       </div>
 
       <!-- 보유 없음 -->
@@ -74,6 +106,16 @@
                 class="px-5 pb-2 pt-3 text-right text-xs font-medium text-muted-foreground"
               >
                 수량
+              </th>
+              <th
+                class="hidden px-5 pb-2 pt-3 text-right text-xs font-medium text-muted-foreground sm:table-cell"
+              >
+                평균단가
+              </th>
+              <th
+                class="hidden px-5 pb-2 pt-3 text-right text-xs font-medium text-muted-foreground sm:table-cell"
+              >
+                현재가
               </th>
               <th
                 class="px-5 pb-2 pt-3 text-right text-xs font-medium text-muted-foreground"
@@ -121,6 +163,12 @@
               <td class="px-5 py-2.5 align-top text-right">
                 {{ h.quantity.toLocaleString() }}주
               </td>
+              <td class="hidden px-5 py-2.5 align-top text-right sm:table-cell">
+                {{ fmtCurrency(h.avgPrice, h.currency) }}
+              </td>
+              <td class="hidden px-5 py-2.5 align-top text-right sm:table-cell">
+                {{ fmtCurrency(h.currentPrice, h.currency) }}
+              </td>
               <td class="px-5 py-2.5 align-top text-right font-medium">
                 {{ fmtCurrency(h.evalAmount, h.currency) }}
               </td>
@@ -138,7 +186,7 @@
             <tr class="border-t bg-muted/30">
               <td
                 class="px-5 py-2 text-xs font-medium text-muted-foreground"
-                colspan="2"
+                colspan="4"
               >
                 합계
               </td>
@@ -201,7 +249,7 @@ const yahooSymbols = computed(() =>
     .map((pos) => toYahooSymbol(pos.stockCode, pos.market, pos.exchange)),
 );
 
-const { priceMap, loading: pricesLoading, priceTime } = usePriceMap(yahooSymbols);
+const { priceMap, priceTime } = usePriceMap(yahooSymbols);
 
 type AccountHolding = {
   stockCode: string;
@@ -249,11 +297,37 @@ function computeHoldings(accountId: string): AccountHolding[] {
   return result;
 }
 
+function computeAccountSummary(accountId: string, holdings: AccountHolding[]) {
+  const trades = tradesStore.items.filter((t) => t.accountId === accountId)
+  const realized = computeRealizedPnl(trades)
+
+  const krw = holdings.filter((h) => h.currency === 'KRW')
+  const usd = holdings.filter((h) => h.currency === 'USD')
+
+  const evalKRW = krw.reduce((s, h) => s + h.evalAmount, 0)
+  const evalUSD = usd.reduce((s, h) => s + h.evalAmount, 0)
+  const unrealizedKRW = krw.reduce((s, h) => s + h.pnl, 0)
+  const unrealizedUSD = usd.reduce((s, h) => s + h.pnl, 0)
+  const costKRW = krw.reduce((s, h) => s + h.totalCost, 0)
+  const costUSD = usd.reduce((s, h) => s + h.totalCost, 0)
+  const hasKRW = trades.some((t) => t.currency === 'KRW')
+  const hasUSD = trades.some((t) => t.currency === 'USD')
+
+  return {
+    evalKRW, evalUSD,
+    unrealizedKRW, unrealizedUSD,
+    realizedKRW: realized.KRW, realizedUSD: realized.USD,
+    returnKRW: costKRW > 0 ? ((unrealizedKRW + realized.KRW) / costKRW) * 100 : 0,
+    returnUSD: costUSD > 0 ? ((unrealizedUSD + realized.USD) / costUSD) * 100 : 0,
+    hasKRW, hasUSD,
+  }
+}
+
 const accountsWithHoldings = computed(() =>
-  brokerAccounts.value.map((account) => ({
-    account,
-    holdings: computeHoldings(account.id),
-  })),
+  brokerAccounts.value.map((account) => {
+    const holdings = computeHoldings(account.id)
+    return { account, holdings, summary: computeAccountSummary(account.id, holdings) }
+  }),
 );
 
 function currencyClass(currency: string) {

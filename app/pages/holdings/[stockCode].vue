@@ -83,9 +83,17 @@
         <HoldingsTradeHistory
           :stock-code="stockCode"
           :currency="holding.currency"
+          show-actions
+          @edit-trade="handleEditTrade"
+          @delete-trade="handleDeleteTrade"
         />
       </section>
     </template>
+
+    <TradeFormModal
+      v-model:open="modalOpen"
+      :edit-trade="editingTrade ?? undefined"
+    />
   </div>
 </template>
 
@@ -93,6 +101,7 @@
 definePageMeta({ middleware: 'auth' })
 
 import { Briefcase, ChevronLeft } from "@lucide/vue";
+import type { Trade } from '~/types'
 
 const route = useRoute();
 const stockCode = route.params.stockCode as string;
@@ -100,12 +109,22 @@ const stockCode = route.params.stockCode as string;
 const tradesStore = useTradesStore();
 onMounted(() => tradesStore.fetchAll());
 
-const {
-  holdings: allHoldings,
-  pricesLoading,
-  priceTime,
-} = useHoldings(toRef(tradesStore, "items"));
+const { holdings: allHoldings, priceTime } = useHoldings(toRef(tradesStore, "items"));
 const holding = computed(() =>
   allHoldings.value.find((h) => h.stockCode === stockCode),
 );
+
+const modalOpen = ref(false)
+const editingTrade = ref<Trade | null>(null)
+
+watch(modalOpen, (open) => { if (!open) editingTrade.value = null })
+
+function handleEditTrade(id: string) {
+  editingTrade.value = tradesStore.items.find(t => t.id === id) ?? null
+  if (editingTrade.value) modalOpen.value = true
+}
+
+async function handleDeleteTrade(id: string) {
+  await tradesStore.remove(id)
+}
 </script>

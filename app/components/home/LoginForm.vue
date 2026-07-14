@@ -7,24 +7,24 @@
     </div>
 
     <!-- 로그인 폼 카드 -->
-    <div class="rounded-lg border bg-card p-6 shadow-sm">
+    <div class="p-6 border rounded-lg shadow-sm bg-card">
       <p class="mb-4 text-sm font-semibold">로그인</p>
       <div class="space-y-3">
         <input
           v-model="form.email"
           type="email"
           placeholder="이메일"
-          class="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          class="flex w-full px-3 text-sm border rounded-md shadow-sm h-9 border-input bg-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
         <input
           v-model="form.password"
           type="password"
           placeholder="비밀번호"
-          class="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          class="flex w-full px-3 text-sm border rounded-md shadow-sm h-9 border-input bg-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           @keydown.enter="login"
         />
         <button
-          class="h-9 w-full rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+          class="w-full text-sm font-medium transition-colors rounded-md h-9 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           :disabled="loading"
           @click="login"
         >
@@ -37,20 +37,20 @@
 </template>
 
 <script setup lang="ts">
-const client = useSupabaseClient()
+const client = useSupabaseClient();
 
-const form = reactive({ email: '', password: '' })
-const loading = ref(false)
-const error = ref('')
+const form = reactive({ email: "", password: "" });
+const loading = ref(false);
+const error = ref("");
 
 async function login() {
-  error.value = ''
-  loading.value = true
+  error.value = "";
+  loading.value = true;
   const { error: err } = await client.auth.signInWithPassword({
     email: form.email,
     password: form.password,
-  })
-  if (err) error.value = err.message
-  loading.value = false
+  });
+  if (err) error.value = err.message;
+  loading.value = false;
 }
 </script>

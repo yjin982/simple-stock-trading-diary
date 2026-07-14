@@ -124,7 +124,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Trade } from '~/types'
+import type { Stock, Trade } from '~/types'
 
 interface Props {
   open: boolean
@@ -140,7 +140,7 @@ const emit = defineEmits<{
 
 const tradesStore = useTradesStore()
 const accountsStore = useAccountsStore()
-const stockSearchRef = ref<{ reset: () => void } | null>(null)
+const stockSearchRef = ref<{ reset: () => void; setStock: (stock: Stock) => void } | null>(null)
 
 const selectedAccountCurrency = computed(() => {
   const acc = accountsStore.items.find(a => a.id === form.accountId)
