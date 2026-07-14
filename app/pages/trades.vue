@@ -134,7 +134,7 @@
 
     <!-- 캘린더 탭 -->
     <template v-else-if="activeTab === 'calendar'">
-      <HomeTradeCalendar
+      <TradeCalendar
         @open-modal="openModal"
         @edit-trade="handleEditTrade"
         @delete-trade="handleDeleteTrade"

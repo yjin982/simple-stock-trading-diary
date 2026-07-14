@@ -100,7 +100,7 @@
                 v-if="showDate"
                 :class="['py-2.5 align-top', card ? 'px-4' : '']"
               >
-                <div class="whitespace-nowrap font-medium">
+                <div class="font-medium whitespace-nowrap">
                   {{ formatTradeDate(trade.date) }}
                 </div>
               </td>
@@ -120,7 +120,7 @@
                   v-if="trade.memo"
                   class="relative group mt-0.5 max-w-[10rem]"
                 >
-                  <div class="truncate text-xs text-muted-foreground">
+                  <div class="text-xs truncate text-muted-foreground">
                     {{ trade.memo }}
                   </div>
 
@@ -137,8 +137,12 @@
                 :class="['py-2.5 align-top', card ? 'px-4' : '']"
               >
                 <NuxtLink :to="`/holdings/${trade.stockCode}`">
-                  <div class="font-medium hover:underline">{{ trade.stockName }}</div>
-                  <div class="text-xs text-muted-foreground">{{ trade.stockCode }}</div>
+                  <div class="font-medium hover:underline">
+                    {{ trade.stockName }}
+                  </div>
+                  <div class="text-xs text-muted-foreground">
+                    {{ trade.stockCode }}
+                  </div>
                 </NuxtLink>
               </td>
               <!-- 계좌 셀 -->
@@ -167,27 +171,38 @@
               </td>
               <td
                 v-if="showActions"
-                :class="['py-2.5 text-right align-top whitespace-nowrap', card ? 'px-4' : '']"
+                :class="[
+                  'py-2.5 text-right align-top whitespace-nowrap',
+                  card ? 'px-4' : '',
+                ]"
               >
                 <template v-if="deletingId === trade.id">
                   <button
                     class="mr-1 rounded px-1.5 py-0.5 text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     @click="confirmDelete(trade.id!)"
-                  >삭제</button>
+                  >
+                    삭제
+                  </button>
                   <button
                     class="rounded px-1.5 py-0.5 text-xs font-medium border border-input bg-background hover:bg-accent"
                     @click="deletingId = null"
-                  >취소</button>
+                  >
+                    취소
+                  </button>
                 </template>
                 <template v-else>
                   <button
                     class="mr-0.5 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                     @click="emit('edit-trade', trade.id!)"
-                  ><Pencil class="h-3.5 w-3.5" /></button>
+                  >
+                    <Pencil class="h-3.5 w-3.5" />
+                  </button>
                   <button
-                    class="rounded p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
+                    class="p-1 rounded text-muted-foreground hover:bg-accent hover:text-destructive"
                     @click="deletingId = trade.id ?? null"
-                  ><Trash2 class="h-3.5 w-3.5" /></button>
+                  >
+                    <Trash2 class="h-3.5 w-3.5" />
+                  </button>
                 </template>
               </td>
             </tr>
@@ -231,15 +246,15 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  'edit-trade': [id: string]
-  'delete-trade': [id: string]
-}>()
+  "edit-trade": [id: string];
+  "delete-trade": [id: string];
+}>();
 
-const deletingId = ref<string | null>(null)
+const deletingId = ref<string | null>(null);
 
 function confirmDelete(id: string) {
-  emit('delete-trade', id)
-  deletingId.value = null
+  emit("delete-trade", id);
+  deletingId.value = null;
 }
 
 const formattedDate = computed(() =>

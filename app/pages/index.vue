@@ -62,6 +62,9 @@
         :prices-loading="pricesLoading"
         @open-modal="openModal(null)"
       />
+      <ClientOnly>
+        <HomePortfolioChart :holdings="holdings" />
+      </ClientOnly>
       <HomeHoldingsTable :holdings="holdings" :price-time="priceTime" />
     </div>
 
