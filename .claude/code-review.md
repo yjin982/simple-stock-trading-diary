@@ -82,7 +82,48 @@ CREATE POLICY "own settings" ON stock_settings
 **UNIQUE 키**: `(user_id, stock_code, market)` — KR/US ticker 충돌 방지 및 market 기반 필터링 대응.
 
 **구현 순서** (테이블 생성 후):
-1. Supabase 대시보드에서 테이블 생성 + RLS 적용
-2. `app/stores/stockSettings.ts` Pinia 스토어 추가 (upsert/fetch)
-3. `/holdings/[stockCode].vue` 상세 페이지에 메모 편집 + 목표 수익률 입력 UI 추가
-4. `app/pages/index.vue` 보유 종목 테이블에서 `pnlRate >= target_rate` 조건으로 강조 표시
+1. ✅ Supabase 대시보드에서 테이블 생성 + RLS 적용
+2. 기존 trades 데이터에서 stock_settings 초기 데이터 수동 삽입 (아래 SQL)
+3. `app/types/index.ts`에 `StockSetting` 인터페이스 추가
+4. `app/stores/stockSettings.ts` Pinia 스토어 추가 (`fetchByCode` / `upsertMeta` / `updateSettings`)
+5. `app/stores/trades.ts` `add()` 함수 — trade 저장 성공 후 `stockSettingsStore.upsertMeta()` 호출 (ON CONFLICT DO NOTHING → 기존 설정 보호)
+6. `app/pages/holdings/[stockCode].vue` — 메모 편집 textarea + 목표 수익률 number input 카드 추가
+7. `app/pages/holdings/index.vue` — `pnlRate >= targetRate` 조건으로 수익률 셀 강조 표시
+
+> **`trades.update()`에는 upsert 불필요**: 편집 시 종목 자체는 변경하지 않으므로 stock_settings에 영향 없음.
+
+### 기존 데이터 초기 삽입 SQL
+
+Supabase SQL 에디터에서 실행. `trades` 테이블의 기존 거래 이력에서 중복 없이 종목별 레코드를 생성:
+
+```sql
+-- trades 이력 기반으로 stock_settings 초기 데이터 생성
+-- 이미 존재하는 (user_id, stock_code, market) 조합은 건너뜀
+INSERT INTO stock_settings (user_id, stock_code, stock_name, market)
+SELECT DISTINCT
+  user_id,
+  stock_code,
+  stock_name,
+  market
+FROM trades
+ON CONFLICT (user_id, stock_code, market) DO NOTHING;
+```
+
+특정 종목만 개별 삽입하거나 memo/target_rate를 함께 설정할 경우:
+
+```sql
+INSERT INTO stock_settings (user_id, stock_code, stock_name, market, memo, target_rate)
+VALUES (
+  auth.uid(),          -- 또는 실제 user_id UUID
+  '005930',            -- 종목코드
+  '삼성전자',           -- 종목명
+  'KR',                -- 'KR' 또는 'US'
+  '장기 보유 목표',     -- 메모 (없으면 NULL)
+  20.00                -- 목표 수익률 % (없으면 NULL)
+)
+ON CONFLICT (user_id, stock_code, market)
+DO UPDATE SET
+  memo = EXCLUDED.memo,
+  target_rate = EXCLUDED.target_rate,
+  updated_at = NOW();
+```

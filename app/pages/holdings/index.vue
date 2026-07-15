@@ -168,7 +168,14 @@
                 class="px-4 py-3 text-right font-medium"
                 :class="pnlColor(h.pnlRate)"
               >
-                {{ fmtPnlRate(h.pnlRate) }}
+                <div class="flex items-center justify-end gap-1">
+                  <span
+                    v-if="isTargetReached(h)"
+                    title="목표 수익률 달성"
+                    class="text-amber-500"
+                  >🎯</span>
+                  {{ fmtPnlRate(h.pnlRate) }}
+                </div>
               </td>
             </tr>
           </tbody>
@@ -200,9 +207,19 @@ const SORT_OPTIONS: { label: string; value: SortKey }[] = [
 ];
 
 const tradesStore = useTradesStore();
+const stockSettingsStore = useStockSettingsStore();
 const { holdings: allHoldings, pricesLoading, priceTime } = useHoldings(toRef(tradesStore, "items"));
 
-onMounted(() => tradesStore.fetchAll());
+onMounted(() => {
+  tradesStore.fetchAll()
+  stockSettingsStore.fetchAll()
+})
+
+function isTargetReached(h: { stockCode: string; market: 'KR' | 'US'; pnlRate: number }): boolean {
+  const setting = stockSettingsStore.getByCode(h.stockCode, h.market)
+  if (!setting?.targetRate) return false
+  return h.pnlRate * 100 >= setting.targetRate
+}
 
 const selectedMarket = ref<Market>("all");
 const sortBy = ref<SortKey>("pnlRate");

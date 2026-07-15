@@ -126,6 +126,11 @@ export const useTradesStore = defineStore('trades', () => {
 
     const trade = mapTrade(data as TradeRow)
     items.value.unshift(trade)
+
+    // 최초 거래 종목이면 stock_settings 레코드 자동 생성
+    const stockSettingsStore = useStockSettingsStore()
+    await stockSettingsStore.upsertMeta(payload.stockCode, payload.stockName, payload.market)
+
     return trade
   }
 
