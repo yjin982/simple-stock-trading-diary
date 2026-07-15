@@ -15,7 +15,7 @@ function toDateStr(date: Date): string {
 
 export function getDayOfWeek(dateStr: string): string {
   const [y, m, d] = parseDateStr(dateStr)
-  return DAYS[new Date(y, m - 1, d).getDay()]
+  return DAYS[new Date(y, m - 1, d).getDay()]!
 }
 
 export function formatDateKo(dateStr: string): string {

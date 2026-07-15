@@ -25,8 +25,8 @@ export default defineNuxtConfig({
     dataGoKrServiceKey: "",
     krxAuthKey: "",
     public: {
-      supabaseUrl: process.env.SUPABASE_URL,
-      supabaseKey: process.env.SUPABASE_KEY,
+      supabaseUrl: "",
+      supabaseKey: "",
     },
   },
 });
