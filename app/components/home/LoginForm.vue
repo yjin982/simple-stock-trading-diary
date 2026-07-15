@@ -40,7 +40,7 @@
 <script setup lang="ts">
 const client = useSupabaseClient();
 
-const form = reactive({ email: "", password: "" });
+const form = reactive({ email: "test@example.com", password: "test1234" });
 const loading = ref(false);
 const error = ref("");
 
