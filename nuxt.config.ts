@@ -27,6 +27,8 @@ export default defineNuxtConfig({
     public: {
       supabaseUrl: "",
       supabaseKey: "",
+      demoEmail: "",
+      demoPassword: "",
     },
   },
 });

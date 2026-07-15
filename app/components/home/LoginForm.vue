@@ -34,24 +34,42 @@
       </div>
       <p v-if="error" class="mt-3 text-xs text-destructive">{{ error }}</p>
     </div>
+
+    <!-- 데모 로그인 -->
+    <div class="text-center">
+      <p class="mb-2 text-xs text-muted-foreground">계정이 없으신가요?</p>
+      <button
+        class="w-full rounded-md border border-input bg-background py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+        :disabled="loading"
+        @click="loginAsDemo"
+      >
+        {{ loading ? "로그인 중..." : "데모 계정으로 체험하기" }}
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 const client = useSupabaseClient();
+const config = useRuntimeConfig();
 
 const form = reactive({ email: "", password: "" });
 const loading = ref(false);
 const error = ref("");
 
-async function login() {
+async function signIn(email: string, password: string) {
   error.value = "";
   loading.value = true;
-  const { error: err } = await client.auth.signInWithPassword({
-    email: form.email,
-    password: form.password,
-  });
+  const { error: err } = await client.auth.signInWithPassword({ email, password });
   if (err) error.value = err.message;
   loading.value = false;
+}
+
+function login() {
+  signIn(form.email, form.password);
+}
+
+function loginAsDemo() {
+  signIn(config.public.demoEmail, config.public.demoPassword);
 }
 </script>
