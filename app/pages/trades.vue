@@ -52,7 +52,18 @@
           </template>
         </div>
 
-        <UiTabGroup v-model="groupBy" :options="GROUP_BY_OPTIONS" />
+        <div class="flex items-center gap-2">
+          <UiTabGroup v-model="groupBy" :options="GROUP_BY_OPTIONS" />
+          <button
+            :disabled="filteredTrades.length === 0"
+            class="flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            :title="`현재 필터 기준 ${filteredTrades.length}건 내보내기`"
+            @click="handleExportCsv"
+          >
+            <Download class="h-4 w-4" />
+            CSV
+          </button>
+        </div>
       </div>
 
       <!-- 매매 이력 목록 (날짜별) -->
@@ -154,7 +165,7 @@
 definePageMeta({ middleware: "auth" });
 
 import { useIntersectionObserver } from "@vueuse/core";
-import { Loader2, Plus, ScrollText } from "@lucide/vue";
+import { Download, Loader2, Plus, ScrollText } from "@lucide/vue";
 import type { Trade, TradeItem } from "~/types";
 
 const PAGE_SIZE = 30;
@@ -259,6 +270,24 @@ const filteredTypeGroups = computed((): TypeGroup[] => {
 const paginatedTypeGroups = computed(() =>
   paginateGroups(filteredTypeGroups.value, loadedCount.value),
 );
+
+// --- CSV 내보내기 ---
+const filteredTrades = computed(() => {
+  const start = startDate.value;
+  const end = endDate.value;
+  return tradesStore.items.filter(
+    (t) => t.tradeDate >= start && t.tradeDate <= end,
+  );
+});
+
+function handleExportCsv() {
+  downloadCsv(
+    filteredTrades.value,
+    startDate.value,
+    endDate.value,
+    selectedPeriod.value === 'all',
+  );
+}
 
 // --- 페이지네이션 ---
 const totalFilteredCount = computed(() => {
