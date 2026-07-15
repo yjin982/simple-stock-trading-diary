@@ -120,6 +120,11 @@
     <main class="mx-auto max-w-screen-xl px-4 py-6 sm:px-6">
       <slot />
     </main>
+
+    <!-- 푸터 -->
+    <footer class="mt-8 border-t py-4 text-center text-xs text-muted-foreground">
+      ©2025 Yu-Jin Jeong. All Rights Reserved.
+    </footer>
   </div>
 </template>
 
