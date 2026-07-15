@@ -51,7 +51,7 @@
             <span class="shrink-0 text-xs text-muted-foreground">{{ stock.code }}</span>
           </div>
           <span class="ml-3 shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-            {{ stock.market }}
+            {{ stock.exchange ?? stock.market }}
           </span>
         </li>
       </template>

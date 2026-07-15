@@ -1,76 +1,101 @@
 import type { Stock } from "~/types";
 
-interface KrxListedItem {
-  basDt: string;
-  srtnCd: string;
-  isinCd: string;
-  mrktCtg: 'KOSPI' | 'KOSDAQ' | string;
-  itmsNm: string;
-  crno: string;
-  corpNm: string;
+interface KrxBaseInfoResponse {
+  OutBlock_1?: KrxBaseInfoItem[];
 }
 
+interface KrxBaseInfoItem {
+  ISU_CD: string;
+  ISU_SRT_CD: string;
+  ISU_NM: string;
+  ISU_ABBRV: string;
+  ISU_ENG_NM: string;
+  LIST_DD: string;
+  MKT_TP_NM: string;
+  SECUGRP_NM: string;
+  SECT_TP_NM: string;
+  KIND_STKCERT_TP_NM: string;
+  PARVAL: string;
+  LIST_SHRS: string;
+}
+
+// 전일 기준 영업일 YYYYMMDD
 function getRecentWeekday(): string {
   const d = new Date();
-  d.setDate(d.getDate() - 2); // API는 당일 데이터 미제공, 전일부터 시작
+  d.setDate(d.getDate() - 1);
   const day = d.getDay();
-  if (day === 0) d.setDate(d.getDate() - 3); // 일요일 → 목요일
-  if (day === 6) d.setDate(d.getDate() - 2); // 토요일 → 목요일
+  if (day === 0) d.setDate(d.getDate() - 2); // 일 → 금
+  if (day === 6) d.setDate(d.getDate() - 1); // 토 → 금
   return d.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
-export default defineCachedEventHandler(async (event) => {
-  const { name } = getQuery(event);
-  if (!name) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "검색어(name)가 필요합니다.",
-    });
-  }
+const KRX_ENDPOINTS = {
+  KOSPI: "https://data-dbg.krx.co.kr/svc/apis/sto/stk_isu_base_info",
+  KOSDAQ: "https://data-dbg.krx.co.kr/svc/apis/sto/ksq_isu_base_info",
+} as const;
 
-  const config = useRuntimeConfig();
-
-  const res = await $fetch<any>(
-    "https://apis.data.go.kr/1160100/service/GetKrxListedInfoService/getItemInfo",
-    {
-      query: {
-        serviceKey: config.dataGoKrServiceKey,
-        resultType: "json",
-        numOfRows: 100,
-        pageNo: 1,
-        basDt: getRecentWeekday(),
-        likeItmsNm: name,
-      },
+async function fetchKrxMarket(
+  authKey: string,
+  market: keyof typeof KRX_ENDPOINTS,
+  basDd: string,
+): Promise<KrxBaseInfoItem[]> {
+  const res = await $fetch<KrxBaseInfoResponse>(KRX_ENDPOINTS[market], {
+    method: "POST",
+    headers: {
+      AUTH_KEY: authKey,
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({ basDd }),
+  });
+  return res?.OutBlock_1 ?? [];
+}
 
-  const header = res?.response?.header;
-  if (header?.resultCode !== "00") {
-    throw createError({
-      statusCode: 502,
-      statusMessage: `KRX상장종목정보 오류 [${header?.resultCode}] ${header?.resultMsg}`,
-    });
-  }
-
-  const raw = res?.response?.body?.items?.item;
-  const items: KrxListedItem[] = Array.isArray(raw) ? raw : raw ? [raw] : [];
-
-  return items
-    .filter((item) => item.mrktCtg === "KOSPI" || item.mrktCtg === "KOSDAQ")
-    .map(
-      (item): Stock => ({
-        code: item.srtnCd.replace(/^A/, ""),
-        name: item.itmsNm,
-        market: "KR",
-        exchange: item.mrktCtg as 'KOSPI' | 'KOSDAQ',
-        currency: "KRW",
-        price: 0,
-      }),
-    );
-}, {
-  maxAge: 60 * 60,
-  getKey: (event) => {
+export default defineCachedEventHandler(
+  async (event) => {
     const { name } = getQuery(event);
-    return `stock-search:${getRecentWeekday()}:${String(name).toLowerCase().trim()}`;
+    if (!name) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "검색어(name)가 필요합니다.",
+      });
+    }
+
+    const config = useRuntimeConfig();
+    const basDd = getRecentWeekday();
+
+    const [kospiItems, kosdaqItems] = await Promise.all([
+      fetchKrxMarket(config.krxAuthKey, "KOSPI", basDd),
+      fetchKrxMarket(config.krxAuthKey, "KOSDAQ", basDd),
+    ]);
+
+    const query = String(name).trim().toLowerCase();
+
+    return [
+      ...kospiItems.map((item) => ({ ...item, _exchange: "KOSPI" as const })),
+      ...kosdaqItems.map((item) => ({ ...item, _exchange: "KOSDAQ" as const })),
+    ]
+      .filter((item) => {
+        const nm = item.ISU_NM.toLowerCase();
+        const abbr = item.ISU_ABBRV.toLowerCase();
+        return nm.includes(query) || abbr.includes(query);
+      })
+      .map(
+        (item): Stock => ({
+          code: item.ISU_SRT_CD,
+          name: item.ISU_ABBRV,
+          market: "KR",
+          exchange: item._exchange,
+          currency: "KRW",
+          price: 0,
+          stockType: item.KIND_STKCERT_TP_NM,
+        }),
+      );
   },
-});
+  {
+    maxAge: 60 * 60 * 12,
+    getKey: (event) => {
+      const { name } = getQuery(event);
+      return `stock-search:${getRecentWeekday()}:${String(name).toLowerCase().trim()}`;
+    },
+  },
+);

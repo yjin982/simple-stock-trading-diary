@@ -112,13 +112,13 @@ https://apis.data.go.kr/1160100/service/GetKrxListedInfoService/getItemInfo?serv
 | 32       | UNREGISTERED_IP_ERROR                            | 등록되지 않은 IP                   |
 | 99       | UNKNOWN_ERROR                                    | 기타에러                           |
 
-## 2. KOSPI 시리즈 일별시세정보
+## 2. KRX Open Api: 유가증권 종목기본정보
 
 ### 1. 설명
 
-KOSPI 시리즈 지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)
+유가증권 종목기본정보 ('10년01월04일 데이터부터 제공)
 
-Server endpoint url : https://data-dbg.krx.co.kr/svc/apis/idx/kospi_dd_trd
+Server endpoint url : https://data-dbg.krx.co.kr/svc/apis/sto/stk_isu_base_info
 
 ### 2. 요청/응답 상세
 
@@ -140,23 +140,176 @@ InBlock_1
 
 OutBlock_1
 
-| Name          | Type   | Description  |
-| ------------- | ------ | ------------ |
-| BAS_DD        | string | 기준일자     |
-| IDX_CLSS      | string | 계열구분     |
-| IDX_NM        | string | 지수명       |
-| CLSPRC_IDX    | string | 종가         |
-| CMPPREVDD_IDX | string | 대비         |
-| FLUC_RT       | string | 등락률       |
-| OPNPRC_IDX    | string | 시가         |
-| HGPRC_IDX     | string | 고가         |
-| LWPRC_IDX     | string | 저가         |
-| ACC_TRDVOL    | string | 거래량       |
-| ACC_TRDVAL    | string | 거래대금     |
-| MKTCAP        | string | 상장시가총액 |
+| Name               | Type   | Description   |
+| ------------------ | ------ | ------------- |
+| ISU_CD             | string | 표준코드      |
+| ISU_SRT_CD         | string | 단축코드      |
+| ISU_NM             | string | 한글 종목명   |
+| ISU_ABBRV          | string | 한글 종목약명 |
+| ISU_ENG_NM         | string | 영문 종목명   |
+| LIST_DD            | string | 상장일        |
+| MKT_TP_NM          | string | 시장구분      |
+| SECUGRP_NM         | string | 증권구분      |
+| SECT_TP_NM         | string | 소속부        |
+| KIND_STKCERT_TP_NM | string | 주식종류      |
+| PARVAL             | string | 액면가        |
+| LIST_SHRS          | string | 상장주식수    |
 
 #### 5. response Sample
 
 ```
-{"OutBlock_1":[{"BAS_DD":"__","IDX_CLSS":"__","IDX_NM":"__","CLSPRC_IDX":"-","CMPPREVDD_IDX":"-","FLUC_RT":"-","OPNPRC_IDX":"-","HGPRC_IDX":"-","LWPRC_IDX":"-","ACC_TRDVOL":"-","ACC_TRDVAL":"-","MKTCAP":"-"},{"BAS_DD":"__","IDX_CLSS":"__","IDX_NM":"__","CLSPRC_IDX":"-","CMPPREVDD_IDX":"-","FLUC_RT":"-","OPNPRC_IDX":"-","HGPRC_IDX":"-","LWPRC_IDX":"-","ACC_TRDVOL":"-","ACC_TRDVAL":"-","MKTCAP":"-"}]}
+{"OutBlock_1":[{"ISU_CD":"__","ISU_SRT_CD":"__","ISU_NM":"__","ISU_ABBRV":"__","ISU_ENG_NM":"__","LIST_DD":"__","MKT_TP_NM":"__","SECUGRP_NM":"__","SECT_TP_NM":"-","KIND_STKCERT_TP_NM":"__","PARVAL":"__","LIST_SHRS":"__"},{"ISU_CD":"__","ISU_SRT_CD":"__","ISU_NM":"__","ISU_ABBRV":"__","ISU_ENG_NM":"__","LIST_DD":"__","MKT_TP_NM":"__","SECUGRP_NM":"__","SECT_TP_NM":"-","KIND_STKCERT_TP_NM":"__","PARVAL":"__","LIST_SHRS":"__"}]}
+```
+
+## 3. KRX Open Api: 유가증권 일별매매정보
+
+### 1. 설명
+
+유가증권시장에 상장되어 있는 주권의 매매정보 제공 ('10년01월04일 데이터부터 제공)
+
+Server endpoint url : https://data-dbg.krx.co.kr/svc/apis/sto/stk_bydd_trd
+
+### 2. 요청/응답 상세
+
+#### 1.request
+
+InBlock_1
+
+| Name  | Type   | Description |
+| ----- | ------ | ----------- |
+| basDd | string | 기준일자    |
+
+#### 3. request Sample
+
+```
+{"basDd":"__"}
+```
+
+#### 4. response
+
+OutBlock_1
+
+| Name          | Type   | Description |
+| ------------- | ------ | ----------- |
+| BAS_DD        | string | 기준일자    |
+| ISU_CD        | string | 종목코드    |
+| ISU_NM        | string | 종목명      |
+| MKT_NM        | string | 시장구분    |
+| SECT_TP_NM    | string | 소속부      |
+| TDD_CLSPRC    | string | 종가        |
+| CMPPREVDD_PRC | string | 대비        |
+| FLUC_RT       | string | 등락률      |
+| TDD_OPNPRC    | string | 시가        |
+| TDD_HGPRC     | string | 고가        |
+| TDD_LWPRC     | string | 저가        |
+| ACC_TRDVOL    | string | 거래량      |
+| ACC_TRDVAL    | string | 거래대금    |
+| MKTCAP        | string | 시가총액    |
+| LIST_SHRS     | string | 상장주식수  |
+
+#### 5. response Sample
+
+```
+{"OutBlock_1":[{"BAS_DD":"__","ISU_CD":"__","ISU_NM":"__","MKT_NM":"__","SECT_TP_NM":"-","TDD_CLSPRC":"-","CMPPREVDD_PRC":"-","FLUC_RT":"-","TDD_OPNPRC":"-","TDD_HGPRC":"-","TDD_LWPRC":"-","ACC_TRDVOL":"-","ACC_TRDVAL":"-","MKTCAP":"-","LIST_SHRS":"-"},{"BAS_DD":"__","ISU_CD":"__","ISU_NM":"__","MKT_NM":"__","SECT_TP_NM":"-","TDD_CLSPRC":"-","CMPPREVDD_PRC":"-","FLUC_RT":"-","TDD_OPNPRC":"-","TDD_HGPRC":"-","TDD_LWPRC":"-","ACC_TRDVOL":"-","ACC_TRDVAL":"-","MKTCAP":"-","LIST_SHRS":"-"}]}
+```
+
+## 2. KRX Open Api: 코스닥 종목기본정보
+
+### 1. 설명
+
+코스닥 종목기본정보 ('10년01월04일 데이터부터 제공)
+
+Server endpoint url : https://data-dbg.krx.co.kr/svc/apis/sto/ksq_isu_base_info
+
+### 2. 요청/응답 상세
+
+#### 1.request
+
+InBlock_1
+
+| Name  | Type   | Description |
+| ----- | ------ | ----------- |
+| basDd | string | 기준일자    |
+
+#### 3. request Sample
+
+```
+{"basDd":"__"}
+```
+
+#### 4. response
+
+OutBlock_1
+
+| Name               | Type   | Description   |
+| ------------------ | ------ | ------------- |
+| ISU_CD             | string | 표준코드      |
+| ISU_SRT_CD         | string | 단축코드      |
+| ISU_NM             | string | 한글 종목명   |
+| ISU_ABBRV          | string | 한글 종목약명 |
+| ISU_ENG_NM         | string | 영문 종목명   |
+| LIST_DD            | string | 상장일        |
+| MKT_TP_NM          | string | 시장구분      |
+| SECUGRP_NM         | string | 증권구분      |
+| SECT_TP_NM         | string | 소속부        |
+| KIND_STKCERT_TP_NM | string | 주식종류      |
+| PARVAL             | string | 액면가        |
+| LIST_SHRS          | string | 상장주식수    |
+
+#### 5. response Sample
+
+```
+{"OutBlock_1":[{"ISU_CD":"__","ISU_SRT_CD":"__","ISU_NM":"__","ISU_ABBRV":"__","ISU_ENG_NM":"__","LIST_DD":"__","MKT_TP_NM":"__","SECUGRP_NM":"__","SECT_TP_NM":"-","KIND_STKCERT_TP_NM":"__","PARVAL":"__","LIST_SHRS":"__"},{"ISU_CD":"__","ISU_SRT_CD":"__","ISU_NM":"__","ISU_ABBRV":"__","ISU_ENG_NM":"__","LIST_DD":"__","MKT_TP_NM":"__","SECUGRP_NM":"__","SECT_TP_NM":"-","KIND_STKCERT_TP_NM":"__","PARVAL":"__","LIST_SHRS":"__"}]}
+```
+
+## 2. KRX Open Api: 코스닥 일별매매정보
+
+### 1. 설명
+
+코스닥시장에 상장되어 있는 주권의 매매정보 제공 ('10년01월04일 데이터부터 제공)
+
+Server endpoint url : https://data-dbg.krx.co.kr/svc/apis/sto/ksq_bydd_trd
+
+### 2. 요청/응답 상세
+
+#### 1.request
+
+InBlock_1
+
+| Name  | Type   | Description |
+| ----- | ------ | ----------- |
+| basDd | string | 기준일자    |
+
+#### 3. request Sample
+
+```
+{"basDd":"__"}
+```
+
+#### 4. response
+
+OutBlock_1
+
+| Name          | Type   | Description |
+| ------------- | ------ | ----------- |
+| BAS_DD        | string | 기준일자    |
+| ISU_CD        | string | 종목코드    |
+| ISU_NM        | string | 종목명      |
+| MKT_NM        | string | 시장구분    |
+| SECT_TP_NM    | string | 소속부      |
+| TDD_CLSPRC    | string | 종가        |
+| CMPPREVDD_PRC | string | 대비        |
+| FLUC_RT       | string | 등락률      |
+| TDD_OPNPRC    | string | 시가        |
+| TDD_HGPRC     | string | 고가        |
+| TDD_LWPRC     | string | 저가        |
+| ACC_TRDVOL    | string | 거래량      |
+| ACC_TRDVAL    | string | 거래대금    |
+| MKTCAP        | string | 시가총액    |
+| LIST_SHRS     | string | 상장주식수  |
+
+#### 5. response Sample
+
+```
+{"OutBlock_1":[{"BAS_DD":"__","ISU_CD":"__","ISU_NM":"__","MKT_NM":"__","SECT_TP_NM":"-","TDD_CLSPRC":"-","CMPPREVDD_PRC":"-","FLUC_RT":"-","TDD_OPNPRC":"-","TDD_HGPRC":"-","TDD_LWPRC":"-","ACC_TRDVOL":"-","ACC_TRDVAL":"-","MKTCAP":"-","LIST_SHRS":"-"},{"BAS_DD":"__","ISU_CD":"__","ISU_NM":"__","MKT_NM":"__","SECT_TP_NM":"-","TDD_CLSPRC":"-","CMPPREVDD_PRC":"-","FLUC_RT":"-","TDD_OPNPRC":"-","TDD_HGPRC":"-","TDD_LWPRC":"-","ACC_TRDVOL":"-","ACC_TRDVAL":"-","MKTCAP":"-","LIST_SHRS":"-"}]}
 ```
