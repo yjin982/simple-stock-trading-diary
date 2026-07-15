@@ -144,7 +144,6 @@
     <AccountAddModal
       v-model:open="modalOpen"
       :edit-account="editTarget ?? undefined"
-      @added="onAdded"
     />
 
     <!-- 삭제 확인 다이얼로그 -->
@@ -281,10 +280,6 @@ function openAddModal() {
 function openEditModal(account: Account) {
   editTarget.value = account;
   modalOpen.value = true;
-}
-
-function onAdded(_id: string) {
-  // store.add() 가 items를 이미 업데이트함
 }
 
 // --- 삭제 ---

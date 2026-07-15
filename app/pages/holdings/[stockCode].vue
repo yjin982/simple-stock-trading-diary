@@ -13,11 +13,7 @@
           <span
             v-if="holding"
             class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold"
-            :class="
-              holding.market === 'KR'
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-            "
+            :class="marketBadgeClass(holding.market)"
           >
             {{ holding.market }}
           </span>

@@ -117,11 +117,7 @@
                 >
                   <span
                     class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold"
-                    :class="
-                      h.market === 'KR'
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                        : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                    "
+                    :class="marketBadgeClass(h.market)"
                   >
                     {{ h.market }}
                   </span>
@@ -218,7 +214,7 @@ onMounted(() => {
 function isTargetReached(h: { stockCode: string; market: 'KR' | 'US'; pnlRate: number }): boolean {
   const setting = stockSettingsStore.getByCode(h.stockCode, h.market)
   if (!setting?.targetRate) return false
-  return h.pnlRate * 100 >= setting.targetRate
+  return h.pnlRate >= setting.targetRate
 }
 
 const selectedMarket = ref<Market>("all");

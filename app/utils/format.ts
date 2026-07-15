@@ -38,3 +38,9 @@ export function currencyClass(currency: string): string {
   if (currency === "USD") return "border-green-200 bg-green-50 text-green-700";
   return "border-purple-200 bg-purple-50 text-purple-700";
 }
+
+export function marketBadgeClass(market: "KR" | "US"): string {
+  return market === "KR"
+    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+    : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
+}

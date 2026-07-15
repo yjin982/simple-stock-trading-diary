@@ -10,7 +10,6 @@ export interface TradeItem {
   accountName?: string;
   memo?: string;
   date?: string;
-  pnl?: number;
 }
 
 export interface Trade {
