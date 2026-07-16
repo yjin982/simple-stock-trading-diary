@@ -31,6 +31,8 @@ export interface Trade {
 }
 
 export interface Holding {
+  accountId: string;
+  accountName?: string;
   stockCode: string;
   stockName: string;
   market: "KR" | "US";
@@ -62,6 +64,20 @@ export interface StockSetting {
   targetRate: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface TradeRow {
+  id?: string;
+  date: string;
+  type: 'BUY' | 'SELL';
+  quantity: number;
+  price: number;
+  total: number;
+  memo?: string;
+  avgHoldingDays?: number;
+  holdingRange?: string;
+  pnlRate?: number;
+  realizedPnl?: number;
 }
 
 export type QuotePriceMap = Record<

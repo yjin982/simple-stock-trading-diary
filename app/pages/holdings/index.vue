@@ -8,7 +8,7 @@
 
     <!-- 요약 카드 -->
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <UiCard title="보유 종목" :value="`${allHoldings.length}개`" />
+      <UiCard title="보유 종목" :value="`${uniqueStockCount}개`" />
       <UiCard
         title="국내 평가금액"
         :value="fmtKRW(summary.krwTotal)"
@@ -51,7 +51,7 @@
 
     <!-- 빈 상태 -->
     <UiEmptyState
-      v-if="sortedHoldings.length === 0"
+      v-if="sortedGroups.length === 0"
       :icon="Briefcase"
       title="보유 종목이 없습니다"
       description="선택한 시장에 보유 중인 종목이 없어요."
@@ -64,13 +64,18 @@
       class="rounded-lg border bg-card text-card-foreground shadow-sm"
     >
       <div class="overflow-x-auto">
-        <table class="w-full min-w-[600px] text-sm">
+        <table class="w-full min-w-[640px] text-sm">
           <thead>
             <tr class="border-b">
               <th
                 class="px-4 py-3 text-left text-xs font-medium text-muted-foreground"
               >
                 종목
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-muted-foreground"
+              >
+                계좌
               </th>
               <th
                 class="px-4 py-3 text-right w-16 text-xs font-medium text-muted-foreground"
@@ -105,75 +110,100 @@
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="h in sortedHoldings"
-              :key="h.stockCode"
-              class="border-b last:border-0 transition-colors hover:bg-muted/30"
+            <template
+              v-for="group in sortedGroups"
+              :key="group.stockCode"
             >
-              <td class="px-4 py-3">
-                <NuxtLink
-                  :to="`/holdings/${h.stockCode}`"
-                  class="flex items-center gap-2"
+              <tr
+                v-for="(h, i) in group.rows"
+                :key="`${h.stockCode}-${h.accountId}`"
+                class="transition-colors hover:bg-muted/30"
+                :class="i < group.rows.length - 1 ? 'border-b border-dashed border-muted' : 'border-b last:border-0'"
+              >
+                <!-- 종목: 첫 행만 렌더, rowspan -->
+                <td
+                  v-if="i === 0"
+                  :rowspan="group.rows.length"
+                  class="px-4 py-3 align-middle"
                 >
-                  <span
-                    class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold"
-                    :class="marketBadgeClass(h.market)"
+                  <NuxtLink
+                    :to="`/holdings/${group.stockCode}`"
+                    class="flex items-center gap-2"
                   >
-                    {{ h.market }}
-                  </span>
-                  <div>
-                    <div class="font-medium hover:underline">
-                      {{ h.stockName }}
+                    <span
+                      class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold"
+                      :class="marketBadgeClass(group.market)"
+                    >
+                      {{ group.market }}
+                    </span>
+                    <div>
+                      <div class="font-medium hover:underline">
+                        {{ group.stockName }}
+                      </div>
+                      <div class="text-xs text-muted-foreground">
+                        {{ group.stockCode }}
+                      </div>
                     </div>
-                    <div class="text-xs text-muted-foreground">
-                      {{ h.stockCode }}
-                    </div>
-                  </div>
-                </NuxtLink>
-              </td>
-              <td class="px-4 py-3 text-right">
-                {{ h.quantity.toLocaleString() }}
-              </td>
-              <td class="hidden px-4 py-3 text-right sm:table-cell">
-                {{ fmtCurrency(h.avgPrice, h.currency) }}
-              </td>
-              <td class="px-4 py-3 text-right">
-                <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
-                <div
-                  class="text-xs"
-                  :class="pnlColor(h.currentPrice - h.avgPrice)"
+                  </NuxtLink>
+                </td>
+                <!-- 계좌명 -->
+                <td class="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                  {{ h.accountName ?? '-' }}
+                </td>
+                <!-- 수량 -->
+                <td class="px-4 py-3 text-right">
+                  {{ h.quantity.toLocaleString() }}
+                </td>
+                <!-- 평균단가 -->
+                <td class="hidden px-4 py-3 text-right sm:table-cell">
+                  {{ fmtCurrency(h.avgPrice, h.currency) }}
+                </td>
+                <!-- 현재가: 그룹 첫 행만 rowspan -->
+                <td
+                  v-if="i === 0"
+                  :rowspan="group.rows.length"
+                  class="px-4 py-3 text-right align-middle"
                 >
-                  {{ h.currentPrice >= h.avgPrice ? "▲" : "▼" }}
-                  {{
-                    Math.abs(
-                      ((h.currentPrice - h.avgPrice) / h.avgPrice) * 100,
-                    ).toFixed(2)
-                  }}%
-                </div>
-              </td>
-              <td class="hidden px-4 py-3 text-right md:table-cell">
-                {{ fmtCurrency(h.currentPrice * h.quantity, h.currency) }}
-              </td>
-              <td
-                class="px-4 py-3 text-right font-medium"
-                :class="pnlColor(h.pnl)"
-              >
-                {{ fmtPnl(h.pnl, h.currency) }}
-              </td>
-              <td
-                class="px-4 py-3 text-right font-medium"
-                :class="pnlColor(h.pnlRate)"
-              >
-                <div class="flex items-center justify-end gap-1">
-                  <span
-                    v-if="isTargetReached(h)"
-                    title="목표 수익률 달성"
-                    class="text-amber-500"
-                  >🎯</span>
-                  {{ fmtPnlRate(h.pnlRate) }}
-                </div>
-              </td>
-            </tr>
+                  <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
+                  <div
+                    class="text-xs"
+                    :class="pnlColor(h.currentPrice - h.avgPrice)"
+                  >
+                    {{ h.currentPrice >= h.avgPrice ? "▲" : "▼" }}
+                    {{
+                      Math.abs(
+                        ((h.currentPrice - h.avgPrice) / h.avgPrice) * 100,
+                      ).toFixed(2)
+                    }}%
+                  </div>
+                </td>
+                <!-- 평가금액 -->
+                <td class="hidden px-4 py-3 text-right md:table-cell">
+                  {{ fmtCurrency(h.currentPrice * h.quantity, h.currency) }}
+                </td>
+                <!-- 평가손익 -->
+                <td
+                  class="px-4 py-3 text-right font-medium"
+                  :class="pnlColor(h.pnl)"
+                >
+                  {{ fmtPnl(h.pnl, h.currency) }}
+                </td>
+                <!-- 수익률 -->
+                <td
+                  class="px-4 py-3 text-right font-medium"
+                  :class="pnlColor(h.pnlRate)"
+                >
+                  <div class="flex items-center justify-end gap-1">
+                    <span
+                      v-if="i === 0 && isTargetReached(h)"
+                      title="목표 수익률 달성"
+                      class="text-amber-500"
+                    >🎯</span>
+                    {{ fmtPnlRate(h.pnlRate) }}
+                  </div>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -204,7 +234,10 @@ const SORT_OPTIONS: { label: string; value: SortKey }[] = [
 
 const tradesStore = useTradesStore();
 const stockSettingsStore = useStockSettingsStore();
+import type { Holding } from "~/types";
+
 const { holdings: allHoldings, pricesLoading, priceTime } = useHoldings(toRef(tradesStore, "items"));
+const uniqueStockCount = computed(() => new Set(allHoldings.value.map(h => h.stockCode)).size);
 
 onMounted(() => {
   tradesStore.fetchAll()
@@ -230,29 +263,61 @@ function setSortBy(key: SortKey) {
   }
 }
 
-// --- 필터 + 정렬 ---
+// --- 필터 ---
 const filteredHoldings = computed(() =>
   selectedMarket.value === "all"
     ? allHoldings.value
     : allHoldings.value.filter((h) => h.market === selectedMarket.value),
 );
 
-const sortedHoldings = computed(() => {
-  return [...filteredHoldings.value].sort((a, b) => {
+// --- 종목별 그룹핑 ---
+type HoldingGroup = {
+  stockCode: string;
+  stockName: string;
+  market: "KR" | "US";
+  currency: "KRW" | "USD";
+  rows: Holding[];
+  totalEval: number;
+  totalPnl: number;
+  groupRate: number;
+};
+
+const groupedHoldings = computed<HoldingGroup[]>(() => {
+  const map = new Map<string, HoldingGroup>();
+  for (const h of filteredHoldings.value) {
+    if (!map.has(h.stockCode)) {
+      map.set(h.stockCode, {
+        stockCode: h.stockCode,
+        stockName: h.stockName,
+        market: h.market,
+        currency: h.currency,
+        rows: [],
+        totalEval: 0,
+        totalPnl: 0,
+        groupRate: 0,
+      });
+    }
+    const g = map.get(h.stockCode)!;
+    g.rows.push(h);
+    g.totalEval += h.currentPrice * h.quantity;
+    g.totalPnl += h.pnl;
+  }
+  for (const g of map.values()) {
+    const totalCost = g.totalEval - g.totalPnl;
+    g.groupRate = totalCost > 0 ? (g.totalPnl / totalCost) * 100 : 0;
+  }
+  return [...map.values()];
+});
+
+// --- 그룹 정렬 ---
+const sortedGroups = computed<HoldingGroup[]>(() => {
+  return [...groupedHoldings.value].sort((a, b) => {
     let diff = 0;
     switch (sortBy.value) {
-      case "pnlRate":
-        diff = a.pnlRate - b.pnlRate;
-        break;
-      case "pnl":
-        diff = a.pnl - b.pnl;
-        break;
-      case "total":
-        diff = a.currentPrice * a.quantity - b.currentPrice * b.quantity;
-        break;
-      case "name":
-        diff = a.stockName.localeCompare(b.stockName, "ko");
-        break;
+      case "pnlRate": diff = a.groupRate - b.groupRate; break;
+      case "pnl":     diff = a.totalPnl - b.totalPnl; break;
+      case "total":   diff = a.totalEval - b.totalEval; break;
+      case "name":    diff = a.stockName.localeCompare(b.stockName, "ko"); break;
     }
     return sortDesc.value ? -diff : diff;
   });
@@ -262,15 +327,26 @@ const sortedHoldings = computed(() => {
 const summary = computed(() => {
   const krw = allHoldings.value.filter((h) => h.currency === "KRW");
   const usd = allHoldings.value.filter((h) => h.currency === "USD");
+  const allGroups = (() => {
+    const map = new Map<string, { pnl: number; cost: number }>();
+    for (const h of allHoldings.value) {
+      const cost = h.currentPrice * h.quantity - h.pnl;
+      if (!map.has(h.stockCode)) map.set(h.stockCode, { pnl: 0, cost: 0 });
+      const s = map.get(h.stockCode)!;
+      s.pnl += h.pnl;
+      s.cost += cost;
+    }
+    return [...map.values()];
+  })();
+  const avgRate = allGroups.length
+    ? allGroups.reduce((s, g) => s + (g.cost > 0 ? (g.pnl / g.cost) * 100 : 0), 0) / allGroups.length
+    : 0;
   return {
     krwTotal: krw.reduce((s, h) => s + h.currentPrice * h.quantity, 0),
     krwPnl: krw.reduce((s, h) => s + h.pnl, 0),
     usdTotal: usd.reduce((s, h) => s + h.currentPrice * h.quantity, 0),
     usdPnl: usd.reduce((s, h) => s + h.pnl, 0),
-    avgRate: allHoldings.value.length
-      ? allHoldings.value.reduce((s, h) => s + h.pnlRate, 0) /
-        allHoldings.value.length
-      : 0,
+    avgRate,
   };
 });
 </script>
