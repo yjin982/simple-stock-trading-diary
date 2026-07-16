@@ -7,6 +7,7 @@ export interface TradeItem {
   quantity: number;
   price: number;
   total: number;
+  accountId?: string;
   accountName?: string;
   memo?: string;
   date?: string;

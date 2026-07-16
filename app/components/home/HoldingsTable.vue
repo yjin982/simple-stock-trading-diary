@@ -35,7 +35,9 @@
               </td>
               <!-- 계좌명 -->
               <td class="py-3 text-xs text-muted-foreground whitespace-nowrap">
-                {{ h.accountName ?? '-' }}
+                <NuxtLink :to="getBrokerUrl(h.accountId)" class="transition-colors hover:text-foreground hover:underline">
+                  {{ h.accountName ?? '-' }}
+                </NuxtLink>
               </td>
               <!-- 수량 -->
               <td class="py-3 text-right">{{ h.quantity.toLocaleString() }}</td>
@@ -70,6 +72,16 @@ const props = defineProps<{
   holdings: Holding[]
   priceTime?: string | null
 }>()
+
+const accountsStore = useAccountsStore()
+onMounted(() => accountsStore.fetchAll())
+
+function getBrokerUrl(accountId: string): string {
+  const account = accountsStore.items.find(a => a.id === accountId)
+  return account?.brokerName
+    ? `/accounts/${encodeURIComponent(account.brokerName)}`
+    : '/accounts'
+}
 
 type HoldingGroup = {
   stockCode: string

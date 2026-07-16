@@ -148,7 +148,9 @@
                 </td>
                 <!-- 계좌명 -->
                 <td class="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                  {{ h.accountName ?? '-' }}
+                  <NuxtLink :to="getBrokerUrl(h.accountId)" class="transition-colors hover:text-foreground hover:underline">
+                    {{ h.accountName ?? '-' }}
+                  </NuxtLink>
                 </td>
                 <!-- 수량 -->
                 <td class="px-4 py-3 text-right">
@@ -233,6 +235,7 @@ const SORT_OPTIONS: { label: string; value: SortKey }[] = [
 ];
 
 const tradesStore = useTradesStore();
+const accountsStore = useAccountsStore();
 const stockSettingsStore = useStockSettingsStore();
 import type { Holding } from "~/types";
 
@@ -241,8 +244,16 @@ const uniqueStockCount = computed(() => new Set(allHoldings.value.map(h => h.sto
 
 onMounted(() => {
   tradesStore.fetchAll()
+  accountsStore.fetchAll()
   stockSettingsStore.fetchAll()
 })
+
+function getBrokerUrl(accountId: string): string {
+  const account = accountsStore.items.find(a => a.id === accountId)
+  return account?.brokerName
+    ? `/accounts/${encodeURIComponent(account.brokerName)}`
+    : '/accounts'
+}
 
 function isTargetReached(h: { stockCode: string; market: 'KR' | 'US'; pnlRate: number }): boolean {
   const setting = stockSettingsStore.getByCode(h.stockCode, h.market)

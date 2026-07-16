@@ -61,6 +61,7 @@ export const useTradesStore = defineStore('trades', () => {
         quantity: trade.quantity,
         price: trade.price,
         total: trade.price * trade.quantity,
+        accountId: trade.accountId,
         accountName: trade.accountName,
         memo: trade.memo,
         date: trade.tradeDate,

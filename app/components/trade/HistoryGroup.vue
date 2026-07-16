@@ -153,7 +153,14 @@
                   card ? 'px-4' : '',
                 ]"
               >
-                {{ trade.accountName ?? "—" }}
+                <NuxtLink
+                  v-if="trade.accountId"
+                  :to="getBrokerUrl(trade.accountId)"
+                  class="transition-colors hover:text-foreground hover:underline"
+                >
+                  {{ trade.accountName ?? "—" }}
+                </NuxtLink>
+                <span v-else>{{ trade.accountName ?? "—" }}</span>
               </td>
               <td :class="['py-2.5 text-right align-top', card ? 'px-4' : '']">
                 {{ trade.quantity.toLocaleString() }}
@@ -255,6 +262,16 @@ const deletingId = ref<string | null>(null);
 function confirmDelete(id: string) {
   emit("delete-trade", id);
   deletingId.value = null;
+}
+
+const accountsStore = useAccountsStore()
+onMounted(() => accountsStore.fetchAll())
+
+function getBrokerUrl(accountId: string): string {
+  const account = accountsStore.items.find(a => a.id === accountId)
+  return account?.brokerName
+    ? `/accounts/${encodeURIComponent(account.brokerName)}`
+    : '/accounts'
 }
 
 const formattedDate = computed(() =>

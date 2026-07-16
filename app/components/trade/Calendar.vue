@@ -103,6 +103,7 @@
       <TradeHistoryGroup
         :trades="selectedDateTrades"
         :card="false"
+        show-account
         show-actions
         @edit-trade="emit('edit-trade', $event)"
         @delete-trade="emit('delete-trade', $event)"
