@@ -16,6 +16,11 @@ export function fmtCurrency(n: number, currency: "KRW" | "USD"): string {
   return currency === "KRW" ? fmtKRW(n) : fmtUSD(n);
 }
 
+export function fmtKRWEquiv(usd: number, rate: number): string {
+  const krw = Math.round(usd * rate)
+  return `≈ ${krw < 0 ? "-" : ""}₩${Math.abs(krw).toLocaleString("ko-KR")}`
+}
+
 export function fmtPnl(n: number, currency: "KRW" | "USD"): string {
   const prefix = n >= 0 ? "+" : "-";
   return prefix + fmtCurrency(n, currency);

@@ -44,7 +44,7 @@
           :title="sortDesc ? '내림차순' : '오름차순'"
           @click="sortDesc = !sortDesc"
         >
-          <component :is="sortDesc ? ArrowDown : ArrowUp" class="h-4 w-4" />
+          <component :is="sortDesc ? ArrowDown : ArrowUp" class="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -61,64 +61,65 @@
     <!-- 보유 종목 테이블 -->
     <section
       v-else
-      class="rounded-lg border bg-card text-card-foreground shadow-sm"
+      class="border rounded-lg shadow-sm bg-card text-card-foreground"
     >
       <div class="overflow-x-auto">
         <table class="w-full min-w-[640px] text-sm">
           <thead>
             <tr class="border-b">
               <th
-                class="px-4 py-3 text-left text-xs font-medium text-muted-foreground"
+                class="px-4 py-3 text-xs font-medium text-left text-muted-foreground"
               >
                 종목
               </th>
               <th
-                class="px-4 py-3 text-left text-xs font-medium text-muted-foreground"
+                class="px-4 py-3 text-xs font-medium text-left text-muted-foreground"
               >
                 계좌
               </th>
               <th
-                class="px-4 py-3 text-right w-16 text-xs font-medium text-muted-foreground"
+                class="w-16 px-4 py-3 text-xs font-medium text-right text-muted-foreground"
               >
                 수량
               </th>
               <th
-                class="hidden px-4 py-3 text-right w-28 text-xs font-medium text-muted-foreground sm:table-cell"
+                class="hidden px-4 py-3 text-xs font-medium text-right w-28 text-muted-foreground sm:table-cell"
               >
                 평균단가
               </th>
               <th
-                class="px-4 py-3 text-right text-xs w-28 font-medium text-muted-foreground"
+                class="px-4 py-3 text-xs font-medium text-right w-28 text-muted-foreground"
               >
                 현재가
               </th>
               <th
-                class="hidden px-4 py-3 text-right w-32 text-xs font-medium text-muted-foreground md:table-cell"
+                class="hidden w-32 px-4 py-3 text-xs font-medium text-right text-muted-foreground md:table-cell"
               >
                 평가금액
               </th>
               <th
-                class="px-4 py-3 text-right w-32 text-xs font-medium text-muted-foreground"
+                class="w-32 px-4 py-3 text-xs font-medium text-right text-muted-foreground"
               >
                 평가손익
               </th>
               <th
-                class="px-4 py-3 text-right w-32 text-xs font-medium text-muted-foreground"
+                class="w-32 px-4 py-3 text-xs font-medium text-right text-muted-foreground"
               >
                 수익률
               </th>
             </tr>
           </thead>
           <tbody>
-            <template
-              v-for="group in sortedGroups"
-              :key="group.stockCode"
-            >
+            <template v-for="group in sortedGroups" :key="group.stockCode">
               <tr
                 v-for="(h, i) in group.rows"
                 :key="`${h.stockCode}-${h.accountId}`"
                 class="transition-colors hover:bg-muted/30"
-                :class="i < group.rows.length - 1 ? 'border-b border-dashed border-muted' : 'border-b last:border-0'"
+                :class="
+                  i < group.rows.length - 1
+                    ? 'border-b border-dashed border-muted'
+                    : 'border-b last:border-0'
+                "
               >
                 <!-- 종목: 첫 행만 렌더, rowspan -->
                 <td
@@ -147,9 +148,14 @@
                   </NuxtLink>
                 </td>
                 <!-- 계좌명 -->
-                <td class="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                  <NuxtLink :to="getBrokerUrl(h.accountId)" class="transition-colors hover:text-foreground hover:underline">
-                    {{ h.accountName ?? '-' }}
+                <td
+                  class="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap"
+                >
+                  <NuxtLink
+                    :to="getBrokerUrl(h.accountId)"
+                    class="transition-colors hover:text-foreground hover:underline"
+                  >
+                    {{ h.accountName ?? "-" }}
                   </NuxtLink>
                 </td>
                 <!-- 수량 -->
@@ -158,7 +164,13 @@
                 </td>
                 <!-- 평균단가 -->
                 <td class="hidden px-4 py-3 text-right sm:table-cell">
-                  {{ fmtCurrency(h.avgPrice, h.currency) }}
+                  <div>{{ fmtCurrency(h.avgPrice, h.currency) }}</div>
+                  <div
+                    v-if="h.currency === 'USD'"
+                    class="text-xs text-muted-foreground"
+                  >
+                    {{ krwEquiv(h.avgPrice) }}
+                  </div>
                 </td>
                 <!-- 현재가: 그룹 첫 행만 rowspan -->
                 <td
@@ -168,31 +180,39 @@
                 >
                   <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
                   <div
-                    class="text-xs"
-                    :class="pnlColor(h.currentPrice - h.avgPrice)"
+                    v-if="h.currency === 'USD'"
+                    class="text-xs text-muted-foreground"
                   >
-                    {{ h.currentPrice >= h.avgPrice ? "▲" : "▼" }}
-                    {{
-                      Math.abs(
-                        ((h.currentPrice - h.avgPrice) / h.avgPrice) * 100,
-                      ).toFixed(2)
-                    }}%
+                    {{ krwEquiv(h.currentPrice) }}
                   </div>
                 </td>
                 <!-- 평가금액 -->
                 <td class="hidden px-4 py-3 text-right md:table-cell">
-                  {{ fmtCurrency(h.currentPrice * h.quantity, h.currency) }}
+                  <div>
+                    {{ fmtCurrency(h.currentPrice * h.quantity, h.currency) }}
+                  </div>
+                  <div
+                    v-if="h.currency === 'USD'"
+                    class="text-xs text-muted-foreground"
+                  >
+                    {{ krwEquiv(h.currentPrice * h.quantity) }}
+                  </div>
                 </td>
                 <!-- 평가손익 -->
-                <td
-                  class="px-4 py-3 text-right font-medium"
-                  :class="pnlColor(h.pnl)"
-                >
-                  {{ fmtPnl(h.pnl, h.currency) }}
+                <td class="px-4 py-3 font-medium text-right">
+                  <div :class="pnlColor(h.pnl)">
+                    {{ fmtPnl(h.pnl, h.currency) }}
+                  </div>
+                  <div
+                    v-if="h.currency === 'USD'"
+                    class="text-xs text-muted-foreground"
+                  >
+                    {{ krwEquiv(h.pnl) }}
+                  </div>
                 </td>
                 <!-- 수익률 -->
                 <td
-                  class="px-4 py-3 text-right font-medium"
+                  class="px-4 py-3 font-medium text-right"
                   :class="pnlColor(h.pnlRate)"
                 >
                   <div class="flex items-center justify-end gap-1">
@@ -200,7 +220,8 @@
                       v-if="i === 0 && isTargetReached(h)"
                       title="목표 수익률 달성"
                       class="text-amber-500"
-                    >🎯</span>
+                      >🎯</span
+                    >
                     {{ fmtPnlRate(h.pnlRate) }}
                   </div>
                 </td>
@@ -214,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: "auth" });
 
 import { ArrowDown, ArrowUp, Briefcase } from "@lucide/vue";
 
@@ -239,24 +260,38 @@ const accountsStore = useAccountsStore();
 const stockSettingsStore = useStockSettingsStore();
 import type { Holding } from "~/types";
 
-const { holdings: allHoldings, pricesLoading, priceTime } = useHoldings(toRef(tradesStore, "items"));
-const uniqueStockCount = computed(() => new Set(allHoldings.value.map(h => h.stockCode)).size);
+const { usdKrw } = useExchangeRate();
+const krwEquiv = (usd: number) =>
+  usdKrw.value ? fmtKRWEquiv(usd, usdKrw.value) : null;
+
+const {
+  holdings: allHoldings,
+  pricesLoading,
+  priceTime,
+} = useHoldings(toRef(tradesStore, "items"));
+const uniqueStockCount = computed(
+  () => new Set(allHoldings.value.map((h) => h.stockCode)).size,
+);
 
 onMounted(() => {
-  stockSettingsStore.fetchAll()
-})
+  stockSettingsStore.fetchAll();
+});
 
 function getBrokerUrl(accountId: string): string {
-  const account = accountsStore.items.find(a => a.id === accountId)
+  const account = accountsStore.items.find((a) => a.id === accountId);
   return account?.brokerName
     ? `/accounts/${encodeURIComponent(account.brokerName)}`
-    : '/accounts'
+    : "/accounts";
 }
 
-function isTargetReached(h: { stockCode: string; market: 'KR' | 'US'; pnlRate: number }): boolean {
-  const setting = stockSettingsStore.getByCode(h.stockCode, h.market)
-  if (!setting?.targetRate) return false
-  return h.pnlRate >= setting.targetRate
+function isTargetReached(h: {
+  stockCode: string;
+  market: "KR" | "US";
+  pnlRate: number;
+}): boolean {
+  const setting = stockSettingsStore.getByCode(h.stockCode, h.market);
+  if (!setting?.targetRate) return false;
+  return h.pnlRate >= setting.targetRate;
 }
 
 const selectedMarket = ref<Market>("all");
@@ -323,10 +358,18 @@ const sortedGroups = computed<HoldingGroup[]>(() => {
   return [...groupedHoldings.value].sort((a, b) => {
     let diff = 0;
     switch (sortBy.value) {
-      case "pnlRate": diff = a.groupRate - b.groupRate; break;
-      case "pnl":     diff = a.totalPnl - b.totalPnl; break;
-      case "total":   diff = a.totalEval - b.totalEval; break;
-      case "name":    diff = a.stockName.localeCompare(b.stockName, "ko"); break;
+      case "pnlRate":
+        diff = a.groupRate - b.groupRate;
+        break;
+      case "pnl":
+        diff = a.totalPnl - b.totalPnl;
+        break;
+      case "total":
+        diff = a.totalEval - b.totalEval;
+        break;
+      case "name":
+        diff = a.stockName.localeCompare(b.stockName, "ko");
+        break;
     }
     return sortDesc.value ? -diff : diff;
   });
@@ -348,7 +391,10 @@ const summary = computed(() => {
     return [...map.values()];
   })();
   const avgRate = allGroups.length
-    ? allGroups.reduce((s, g) => s + (g.cost > 0 ? (g.pnl / g.cost) * 100 : 0), 0) / allGroups.length
+    ? allGroups.reduce(
+        (s, g) => s + (g.cost > 0 ? (g.pnl / g.cost) * 100 : 0),
+        0,
+      ) / allGroups.length
     : 0;
   return {
     krwTotal: krw.reduce((s, h) => s + h.currentPrice * h.quantity, 0),

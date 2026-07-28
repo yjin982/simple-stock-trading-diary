@@ -218,13 +218,16 @@
                 {{ h.quantity.toLocaleString() }}주
               </td>
               <td class="hidden px-5 py-2.5 align-top text-right sm:table-cell">
-                {{ fmtCurrency(h.avgPrice, h.currency) }}
+                <div>{{ fmtCurrency(h.avgPrice, h.currency) }}</div>
+                <div v-if="h.currency === 'USD'" class="text-xs text-muted-foreground">{{ krwEquiv(h.avgPrice) }}</div>
               </td>
               <td class="hidden px-5 py-2.5 align-top text-right sm:table-cell">
-                {{ fmtCurrency(h.currentPrice, h.currency) }}
+                <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
+                <div v-if="h.currency === 'USD'" class="text-xs text-muted-foreground">{{ krwEquiv(h.currentPrice) }}</div>
               </td>
               <td class="px-5 py-2.5 align-top text-right font-medium">
-                {{ fmtCurrency(h.evalAmount, h.currency) }}
+                <div>{{ fmtCurrency(h.evalAmount, h.currency) }}</div>
+                <div v-if="h.currency === 'USD'" class="text-xs font-normal text-muted-foreground">{{ krwEquiv(h.evalAmount) }}</div>
               </td>
               <td
                 class="px-5 py-2.5 align-top text-right"
@@ -232,6 +235,7 @@
               >
                 <div class="font-medium">{{ fmtPnl(h.pnl, h.currency) }}</div>
                 <div class="text-xs">{{ fmtPnlRate(h.pnlRate) }}</div>
+                <div v-if="h.currency === 'USD'" class="text-xs text-muted-foreground">{{ krwEquiv(h.pnl) }}</div>
               </td>
             </tr>
           </tbody>
@@ -303,6 +307,9 @@ const yahooSymbols = computed(() =>
 );
 
 const { priceMap, priceTime } = usePriceMap(yahooSymbols);
+
+const { usdKrw } = useExchangeRate()
+const krwEquiv = (usd: number) => usdKrw.value ? fmtKRWEquiv(usd, usdKrw.value) : null
 
 type AccountHolding = {
   stockCode: string;

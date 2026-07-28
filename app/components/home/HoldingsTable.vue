@@ -43,15 +43,18 @@
               <td class="py-3 text-right">{{ h.quantity.toLocaleString() }}</td>
               <!-- 평균단가 -->
               <td class="hidden py-3 text-right sm:table-cell">
-                {{ fmtCurrency(h.avgPrice, h.currency) }}
+                <div>{{ fmtCurrency(h.avgPrice, h.currency) }}</div>
+                <div v-if="h.currency === 'USD'" class="text-xs text-muted-foreground">{{ krwEquiv(h.avgPrice) }}</div>
               </td>
               <!-- 현재가: 그룹 첫 행만 rowspan -->
               <td v-if="i === 0" :rowspan="group.rows.length" class="py-3 text-right align-middle">
-                {{ fmtCurrency(h.currentPrice, h.currency) }}
+                <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
+                <div v-if="h.currency === 'USD'" class="text-xs text-muted-foreground">{{ krwEquiv(h.currentPrice) }}</div>
               </td>
               <!-- 평가손익 -->
               <td class="py-3 text-right font-medium" :class="pnlColor(h.pnl)">
-                {{ fmtPnl(h.pnl, h.currency) }}
+                <div>{{ fmtPnl(h.pnl, h.currency) }}</div>
+                <div v-if="h.currency === 'USD'" class="text-xs">{{ krwEquiv(h.pnl) }}</div>
               </td>
               <!-- 손익률 -->
               <td class="hidden py-3 text-right md:table-cell" :class="pnlColor(h.pnlRate)">
@@ -74,6 +77,8 @@ const props = defineProps<{
 }>()
 
 const accountsStore = useAccountsStore()
+const { usdKrw } = useExchangeRate()
+const krwEquiv = (usd: number) => usdKrw.value ? fmtKRWEquiv(usd, usdKrw.value) : null
 
 function getBrokerUrl(accountId: string): string {
   const account = accountsStore.items.find(a => a.id === accountId)

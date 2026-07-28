@@ -102,10 +102,12 @@
                   {{ row.quantity.toLocaleString() }}
                 </td>
                 <td class="px-5 py-2.5 align-center text-right">
-                  {{ fmtCurrency(row.price, currency) }}
+                  <div>{{ fmtCurrency(row.price, currency) }}</div>
+                  <div v-if="krwEquiv(row.price)" class="text-xs text-muted-foreground">{{ krwEquiv(row.price) }}</div>
                 </td>
                 <td class="px-5 py-2.5 align-center text-right">
-                  {{ fmtCurrency(row.total, currency) }}
+                  <div>{{ fmtCurrency(row.total, currency) }}</div>
+                  <div v-if="krwEquiv(row.total)" class="text-xs text-muted-foreground">{{ krwEquiv(row.total) }}</div>
                 </td>
                 <td
                   class="px-5 py-2.5 align-center text-right text-muted-foreground whitespace-nowrap"
@@ -147,6 +149,9 @@
                       ? fmtPnl(row.realizedPnl, currency)
                       : "—"
                   }}
+                  <div v-if="row.realizedPnl != null && krwEquiv(row.realizedPnl)" class="text-xs text-muted-foreground">
+                    {{ krwEquiv(row.realizedPnl) }}
+                  </div>
                 </td>
                 <td
                   v-if="showActions"
@@ -283,6 +288,10 @@ function confirmDelete(id: string) {
 }
 
 const tradesStore = useTradesStore();
+
+const { usdKrw } = useExchangeRate()
+const isUSD = computed(() => props.currency === 'USD')
+const krwEquiv = (usd: number) => (isUSD.value && usdKrw.value) ? fmtKRWEquiv(usd, usdKrw.value) : null
 
 const accountGroups = computed<AccountGroup[]>(() => {
   const byAccount = new Map<
