@@ -147,7 +147,7 @@ const selectedAccountCurrency = computed(() => {
   return acc?.currency ?? null
 })
 
-const today = new Date().toISOString().slice(0, 10)
+const today = todayKST()
 
 const form = reactive({
   type: 'BUY' as 'BUY' | 'SELL',

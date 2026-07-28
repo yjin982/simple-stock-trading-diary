@@ -1,4 +1,5 @@
 import type { Trade } from '~/types'
+import { todayKST } from './date'
 
 const CSV_HEADERS = [
   '거래일', '종목명', '종목코드', '시장', '거래소',
@@ -39,7 +40,7 @@ export function buildCsv(trades: Trade[]): string {
 }
 
 export function downloadCsv(trades: Trade[], startDate: string, endDate: string, isAllPeriod: boolean) {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayKST()
   const filename = isAllPeriod
     ? `매매이력_전체_${today}.csv`
     : `매매이력_${startDate}_${endDate}.csv`

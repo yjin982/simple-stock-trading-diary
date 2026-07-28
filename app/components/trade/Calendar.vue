@@ -122,7 +122,7 @@ const emit = defineEmits<{
 }>()
 
 const tradesStore = useTradesStore()
-const today = new Date().toISOString().slice(0, 10)
+const today = todayKST()
 const viewDate = ref(new Date())
 const selectedDate = ref<string | null>(today)
 

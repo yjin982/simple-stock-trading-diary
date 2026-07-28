@@ -1,5 +1,9 @@
 export const DAYS = ['일', '월', '화', '수', '목', '금', '토'] as const
 
+export function todayKST(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
+}
+
 function parseDateStr(dateStr: string): [number, number, number] {
   const parts = dateStr.split('-').map(Number)
   return [parts[0]!, parts[1]!, parts[2]!]
