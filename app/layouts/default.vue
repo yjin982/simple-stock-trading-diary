@@ -135,6 +135,15 @@ const client = useSupabaseClient()
 const user = useSupabaseUser()
 const sidebarOpen = ref(false)
 
+const tradesStore = useTradesStore()
+const accountsStore = useAccountsStore()
+watch(user, (u) => {
+  if (u) {
+    tradesStore.fetchAll()
+    accountsStore.fetchAll()
+  }
+}, { immediate: true })
+
 async function logout() {
   await client.auth.signOut()
   sidebarOpen.value = false

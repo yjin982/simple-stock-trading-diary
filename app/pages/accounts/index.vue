@@ -196,10 +196,6 @@ import type { Account } from "~/types";
 const accountsStore = useAccountsStore();
 const tradesStore = useTradesStore();
 
-onMounted(() => {
-  accountsStore.fetchAll();
-  tradesStore.fetchAll();
-});
 
 type AccountSummary = {
   holdingCount: number;
@@ -218,40 +214,34 @@ const yahooSymbols = computed(() =>
 const { priceMap, priceTime } = usePriceMap(yahooSymbols);
 
 const accountSummaryById = computed(() => {
-  const result = new Map<string, AccountSummary>();
+  type Acc = { holdingCount: number; krwCost: number; krwEval: number; usdCost: number; usdEval: number };
+  const acc = new Map<string, Acc>();
 
-  const byAccount = new Map<string, typeof tradesStore.items>();
-  for (const trade of tradesStore.items) {
-    if (!byAccount.has(trade.accountId)) byAccount.set(trade.accountId, []);
-    byAccount.get(trade.accountId)!.push(trade);
+  for (const pos of allPositions.value.values()) {
+    const qty = lotsQty(pos.lots);
+    if (qty <= 0) continue;
+
+    const { accountId } = pos;
+    if (!acc.has(accountId)) acc.set(accountId, { holdingCount: 0, krwCost: 0, krwEval: 0, usdCost: 0, usdEval: 0 });
+    const a = acc.get(accountId)!;
+    a.holdingCount++;
+    const cost = lotsCost(pos.lots);
+    const sym = toYahooSymbol(pos.stockCode, pos.market, pos.exchange);
+    const evalAmt = (priceMap.value[sym] ?? (cost / qty)) * qty;
+    if (pos.currency === "KRW") { a.krwCost += cost; a.krwEval += evalAmt; }
+    else { a.usdCost += cost; a.usdEval += evalAmt; }
   }
 
-  for (const [accountId, trades] of byAccount) {
-    const positions = buildFifoPositions(trades);
-    let holdingCount = 0;
-    let krwCost = 0, krwEval = 0, usdCost = 0, usdEval = 0;
-
-    for (const pos of positions.values()) {
-      const qty = lotsQty(pos.lots);
-      if (qty <= 0) continue;
-      holdingCount++;
-      const cost = lotsCost(pos.lots);
-      const sym = toYahooSymbol(pos.stockCode, pos.market, pos.exchange);
-      const evalAmt = (priceMap.value[sym] ?? (cost / qty)) * qty;
-      if (pos.currency === "KRW") { krwCost += cost; krwEval += evalAmt; }
-      else { usdCost += cost; usdEval += evalAmt; }
-    }
-
-    const krwPnl = calcPnl(krwEval, krwCost);
-    const usdPnl = calcPnl(usdEval, usdCost);
-
+  const result = new Map<string, AccountSummary>();
+  for (const [accountId, a] of acc) {
+    const krwPnl = calcPnl(a.krwEval, a.krwCost);
+    const usdPnl = calcPnl(a.usdEval, a.usdCost);
     result.set(accountId, {
-      holdingCount,
-      krw: krwCost > 0 ? { totalEval: krwEval, pnl: krwPnl, pnlRate: calcPnlRate(krwPnl, krwCost) } : null,
-      usd: usdCost > 0 ? { totalEval: usdEval, pnl: usdPnl, pnlRate: calcPnlRate(usdPnl, usdCost) } : null,
+      holdingCount: a.holdingCount,
+      krw: a.krwCost > 0 ? { totalEval: a.krwEval, pnl: krwPnl, pnlRate: calcPnlRate(krwPnl, a.krwCost) } : null,
+      usd: a.usdCost > 0 ? { totalEval: a.usdEval, pnl: usdPnl, pnlRate: calcPnlRate(usdPnl, a.usdCost) } : null,
     });
   }
-
   return result;
 });
 

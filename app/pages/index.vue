@@ -30,10 +30,20 @@
             />
           </div>
           <div class="flex flex-col gap-2 p-4">
-            <div class="relative border-t border-b border-primary/60 px-3 py-2.5 mx-1 text-sm text-card-foreground/80">
-              <span class="absolute -top-3.5 -left-2 bg-card px-1 text-xl leading-none text-primary/60">❝</span>
+            <div
+              class="relative border-t border-b border-primary/60 px-3 py-2.5 mx-1 text-sm text-card-foreground/80"
+            >
+              <span
+                class="absolute -top-3.5 -left-2 bg-card px-1 text-xl leading-none text-primary/60"
+              >
+                ❝
+              </span>
               '투신자판' 투자는 신중하게, 자기가 판단해서
-              <span class="absolute -bottom-3.5 -right-2 bg-card px-1 text-xl leading-none text-primary/60">❞</span>
+              <span
+                class="absolute -bottom-3.5 -right-2 bg-card px-1 text-xl leading-none text-primary/60"
+              >
+                ❞
+              </span>
             </div>
             <div
               v-for="(rule, i) in RULES"
@@ -79,7 +89,6 @@ import img2 from "~/assets/images/img2.jpg";
 const user = useSupabaseUser();
 const tradesStore = useTradesStore();
 
-onMounted(() => tradesStore.fetchAll());
 
 const { holdings, pricesLoading, priceTime } = useHoldings(
   toRef(tradesStore, "items"),

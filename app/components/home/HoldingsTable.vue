@@ -74,7 +74,6 @@ const props = defineProps<{
 }>()
 
 const accountsStore = useAccountsStore()
-onMounted(() => accountsStore.fetchAll())
 
 function getBrokerUrl(accountId: string): string {
   const account = accountsStore.items.find(a => a.id === accountId)

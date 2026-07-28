@@ -146,10 +146,6 @@ const tradesStore = useTradesStore();
 const accountsStore = useAccountsStore();
 const stockSettingsStore = useStockSettingsStore();
 
-onMounted(() => {
-  tradesStore.fetchAll();
-  accountsStore.fetchAll();
-});
 
 const { holdings: allHoldings, priceTime } = useHoldings(
   toRef(tradesStore, "items"),

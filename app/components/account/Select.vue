@@ -86,8 +86,6 @@ const accounts = computed<AccountOption[]>(() =>
   })
 )
 
-onMounted(() => accountsStore.fetchAll())
-
 const isOpen = ref(false);
 const addModalOpen = ref(false);
 const triggerRef = ref<HTMLButtonElement | null>(null);

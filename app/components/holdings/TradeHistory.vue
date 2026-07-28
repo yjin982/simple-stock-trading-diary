@@ -15,15 +15,51 @@
         <table class="w-full table-fixed min-w-[768px] text-sm">
           <thead>
             <tr class="border-b">
-              <th class="w-20 px-5 pt-3 pb-2 font-medium text-left text-muted-foreground">날짜</th>
-              <th class="w-16 px-3.5 pt-3 pb-2 font-medium text-center text-muted-foreground">유형</th>
-              <th class="w-40 px-2 pt-3 pb-2 font-medium text-left text-muted-foreground">메모</th>
-              <th class="w-16 px-2 pt-3 pb-2 font-medium text-right w-18 text-muted-foreground">수량</th>
-              <th class="px-5 pt-3 pb-2 font-medium text-right w-28 text-muted-foreground">단가</th>
-              <th class="px-5 pt-3 pb-2 font-medium text-right w-28 text-muted-foreground">금액</th>
-              <th class="w-32 px-5 pt-3 pb-2 font-medium text-right text-muted-foreground">평균보유일수</th>
-              <th class="w-24 px-5 pt-3 pb-2 font-medium text-right text-muted-foreground">수익률</th>
-              <th class="w-32 px-5 pt-3 pb-2 font-medium text-right text-muted-foreground">실현손익</th>
+              <th
+                class="w-20 px-5 pt-3 pb-2 font-medium text-left text-muted-foreground"
+              >
+                날짜
+              </th>
+              <th
+                class="w-16 px-3.5 pt-3 pb-2 font-medium text-center text-muted-foreground"
+              >
+                유형
+              </th>
+              <th
+                class="w-40 px-2 pt-3 pb-2 font-medium text-left text-muted-foreground"
+              >
+                메모
+              </th>
+              <th
+                class="w-16 px-2 pt-3 pb-2 font-medium text-right w-18 text-muted-foreground"
+              >
+                수량
+              </th>
+              <th
+                class="px-5 pt-3 pb-2 font-medium text-right w-28 text-muted-foreground"
+              >
+                단가
+              </th>
+              <th
+                class="px-5 pt-3 pb-2 font-medium text-right w-28 text-muted-foreground"
+              >
+                금액
+              </th>
+              <th
+                class="w-32 px-5 pt-3 pb-2 font-medium text-right text-muted-foreground"
+              >
+                평균보유일수
+              </th>
+              <th
+                class="w-24 px-5 pt-3 pb-2 font-medium text-right text-muted-foreground"
+              >
+                수익률
+              </th>
+              <th
+                class="w-32 px-5 pt-3 pb-2 font-medium text-right text-muted-foreground"
+              >
+                실현손익
+              </th>
               <th
                 v-if="showActions"
                 class="w-20 px-5 pt-3 pb-2 font-medium text-right text-muted-foreground"
@@ -31,7 +67,9 @@
             </tr>
           </thead>
           <tbody>
-            <template v-if="getDisplayItems(group.rows, group.accountId).length">
+            <template
+              v-if="getDisplayItems(group.rows, group.accountId).length"
+            >
               <tr
                 v-for="(row, i) in getDisplayItems(group.rows, group.accountId)"
                 :key="i"
@@ -54,7 +92,9 @@
                 </td>
                 <td class="px-2 py-2.5 align-center">
                   <div v-if="row.memo" class="relative group">
-                    <div class="text-xs text-muted-foreground">{{ row.memo }}</div>
+                    <div class="text-xs text-muted-foreground">
+                      {{ row.memo }}
+                    </div>
                   </div>
                   <span v-else class="text-muted-foreground">—</span>
                 </td>
@@ -67,10 +107,14 @@
                 <td class="px-5 py-2.5 align-center text-right">
                   {{ fmtCurrency(row.total, currency) }}
                 </td>
-                <td class="px-5 py-2.5 align-center text-right text-muted-foreground whitespace-nowrap">
+                <td
+                  class="px-5 py-2.5 align-center text-right text-muted-foreground whitespace-nowrap"
+                >
                   <template v-if="row.avgHoldingDays != null">
                     <div class="relative inline-block group">
-                      <span class="underline cursor-default decoration-dotted">{{ row.avgHoldingDays }}일</span>
+                      <span class="underline cursor-default decoration-dotted"
+                        >{{ row.avgHoldingDays }}일</span
+                      >
                       <div
                         class="absolute right-0 bottom-full mb-1 hidden group-hover:block z-50 whitespace-nowrap rounded bg-slate-900/50 px-2 py-1 text-[10px] font-medium text-slate-50 shadow-md dark:bg-slate-100/50 dark:text-slate-900"
                       >
@@ -82,15 +126,27 @@
                 </td>
                 <td
                   class="px-5 py-2.5 align-center text-right"
-                  :class="row.pnlRate != null ? pnlColor(row.pnlRate) : 'text-muted-foreground'"
+                  :class="
+                    row.pnlRate != null
+                      ? pnlColor(row.pnlRate)
+                      : 'text-muted-foreground'
+                  "
                 >
                   {{ row.pnlRate != null ? fmtPnlRate(row.pnlRate) : "—" }}
                 </td>
                 <td
                   class="px-5 py-2.5 align-center text-right font-medium"
-                  :class="row.realizedPnl != null ? pnlColor(row.realizedPnl) : 'text-muted-foreground'"
+                  :class="
+                    row.realizedPnl != null
+                      ? pnlColor(row.realizedPnl)
+                      : 'text-muted-foreground'
+                  "
                 >
-                  {{ row.realizedPnl != null ? fmtPnl(row.realizedPnl, currency) : "—" }}
+                  {{
+                    row.realizedPnl != null
+                      ? fmtPnl(row.realizedPnl, currency)
+                      : "—"
+                  }}
                 </td>
                 <td
                   v-if="showActions"
@@ -152,7 +208,9 @@
         <button
           class="flex h-6 min-w-[2.5rem] items-center justify-center rounded px-4 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-40"
           :disabled="getCurrentPage(group.accountId) === 1"
-          @click="setCurrentPage(group.accountId, getCurrentPage(group.accountId) - 1)"
+          @click="
+            setCurrentPage(group.accountId, getCurrentPage(group.accountId) - 1)
+          "
         >
           이전
         </button>
@@ -171,8 +229,12 @@
         </button>
         <button
           class="flex h-6 min-w-[2.5rem] items-center justify-center rounded px-4 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-40"
-          :disabled="getCurrentPage(group.accountId) === getTotalPages(group.rows.length)"
-          @click="setCurrentPage(group.accountId, getCurrentPage(group.accountId) + 1)"
+          :disabled="
+            getCurrentPage(group.accountId) === getTotalPages(group.rows.length)
+          "
+          @click="
+            setCurrentPage(group.accountId, getCurrentPage(group.accountId) + 1)
+          "
         >
           다음
         </button>
@@ -223,32 +285,47 @@ function confirmDelete(id: string) {
 const tradesStore = useTradesStore();
 
 const accountGroups = computed<AccountGroup[]>(() => {
-  const byAccount = new Map<string, { accountId: string; accountName?: string; rawTrades: Trade[] }>();
+  const byAccount = new Map<
+    string,
+    { accountId: string; accountName?: string; rawTrades: Trade[] }
+  >();
 
-  const sorted = tradesStore.items
-    .filter(
+  const sorted = sortTradesAsc(
+    tradesStore.items.filter(
       (t) =>
         t.stockCode === props.stockCode &&
         (!props.accountId || t.accountId === props.accountId),
-    )
-    .sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
+    ),
+  );
 
   for (const trade of sorted) {
     if (!byAccount.has(trade.accountId)) {
-      byAccount.set(trade.accountId, { accountId: trade.accountId, accountName: trade.accountName, rawTrades: [] });
+      byAccount.set(trade.accountId, {
+        accountId: trade.accountId,
+        accountName: trade.accountName,
+        rawTrades: [],
+      });
     }
     byAccount.get(trade.accountId)!.rawTrades.push(trade);
   }
 
-  return [...byAccount.values()].map(({ accountId, accountName, rawTrades }) => ({
-    accountId,
-    accountName,
-    rows: buildTradeRows(rawTrades),
-  }));
+  return [...byAccount.values()].map(
+    ({ accountId, accountName, rawTrades }) => ({
+      accountId,
+      accountName,
+      rows: buildTradeRows(rawTrades),
+    }),
+  );
 });
 
-const { resetAll, getCurrentPage, setCurrentPage, getTotalPages, getDisplayItems, getPageNumbers } =
-  useAccountPagination();
+const {
+  resetAll,
+  getCurrentPage,
+  setCurrentPage,
+  getTotalPages,
+  getDisplayItems,
+  getPageNumbers,
+} = useAccountPagination();
 
 watch(
   () => props.stockCode,

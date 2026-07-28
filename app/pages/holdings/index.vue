@@ -243,8 +243,6 @@ const { holdings: allHoldings, pricesLoading, priceTime } = useHoldings(toRef(tr
 const uniqueStockCount = computed(() => new Set(allHoldings.value.map(h => h.stockCode)).size);
 
 onMounted(() => {
-  tradesStore.fetchAll()
-  accountsStore.fetchAll()
   stockSettingsStore.fetchAll()
 })
 

@@ -195,8 +195,6 @@ const GROUP_BY_OPTIONS: { label: string; value: GroupBy }[] = [
 const tradesStore = useTradesStore();
 const today = new Date().toISOString().slice(0, 10);
 
-onMounted(() => tradesStore.fetchAll());
-
 const activeTab = ref<MainTab>("list");
 const selectedPeriod = ref<Period>("all");
 const customStart = ref("");
