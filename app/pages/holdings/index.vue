@@ -152,7 +152,7 @@
                   class="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap"
                 >
                   <NuxtLink
-                    :to="getBrokerUrl(h.accountId)"
+                    :to="accountsStore.getBrokerUrl(h.accountId)"
                     class="transition-colors hover:text-foreground hover:underline"
                   >
                     {{ h.accountName ?? "-" }}
@@ -261,19 +261,15 @@ const accountsStore = useAccountsStore();
 const stockSettingsStore = useStockSettingsStore();
 import type { Holding } from "~/types";
 
-const { usdKrw } = useExchangeRate();
-const krwEquiv = (usd: number) =>
-  usdKrw.value ? fmtKRWEquiv(usd, usdKrw.value) : null;
+const { usdKrw, krwEquiv } = useExchangeRate();
 
 function toKRW(currency: "KRW" | "USD", amount: number): number {
   return currency === "USD" ? amount * (usdKrw.value ?? 0) : amount;
 }
 
-const {
-  holdings: allHoldings,
-  pricesLoading,
-  priceTime,
-} = useHoldings(toRef(tradesStore, "items"));
+const { holdings: allHoldings, priceTime } = useHoldings(
+  toRef(tradesStore, "items"),
+);
 const uniqueStockCount = computed(
   () => new Set(allHoldings.value.map((h) => h.stockCode)).size,
 );
@@ -281,13 +277,6 @@ const uniqueStockCount = computed(
 onMounted(() => {
   stockSettingsStore.fetchAll();
 });
-
-function getBrokerUrl(accountId: string): string {
-  const account = accountsStore.items.find((a) => a.id === accountId);
-  return account?.brokerName
-    ? `/accounts/${encodeURIComponent(account.brokerName)}`
-    : "/accounts";
-}
 
 function isTargetReached(h: {
   stockCode: string;

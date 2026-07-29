@@ -157,34 +157,13 @@
                   v-if="showActions"
                   class="px-5 py-2.5 align-center text-right whitespace-nowrap"
                 >
-                  <template v-if="deletingId === row.id">
-                    <button
-                      class="mr-1 rounded px-1.5 py-0.5 text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      @click="confirmDelete(row.id!)"
-                    >
-                      삭제
-                    </button>
-                    <button
-                      class="rounded px-1.5 py-0.5 text-xs font-medium border border-input bg-background hover:bg-accent"
-                      @click="deletingId = null"
-                    >
-                      취소
-                    </button>
-                  </template>
-                  <template v-else>
-                    <button
-                      class="mr-0.5 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-                      @click="emit('edit-trade', row.id!)"
-                    >
-                      <Pencil class="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      class="p-1 rounded text-muted-foreground hover:bg-accent hover:text-destructive"
-                      @click="deletingId = row.id ?? null"
-                    >
-                      <Trash2 class="h-3.5 w-3.5" />
-                    </button>
-                  </template>
+                  <UiRowActions
+                    :confirming="deletingId === row.id"
+                    @edit="emit('edit-trade', row.id!)"
+                    @request-delete="deletingId = row.id ?? null"
+                    @confirm-delete="confirmDelete(row.id!)"
+                    @cancel-delete="deletingId = null"
+                  />
                 </td>
               </tr>
             </template>
@@ -259,7 +238,6 @@
 </template>
 
 <script setup lang="ts">
-import { Pencil, Trash2 } from "@lucide/vue";
 import type { Trade, TradeRow } from "~/types";
 
 type AccountGroup = {
@@ -289,9 +267,9 @@ function confirmDelete(id: string) {
 
 const tradesStore = useTradesStore();
 
-const { usdKrw } = useExchangeRate()
+const { krwEquiv: baseKrwEquiv } = useExchangeRate()
 const isUSD = computed(() => props.currency === 'USD')
-const krwEquiv = (usd: number) => (isUSD.value && usdKrw.value) ? fmtKRWEquiv(usd, usdKrw.value) : null
+const krwEquiv = (usd: number) => isUSD.value ? baseKrwEquiv(usd) : null
 
 const accountGroups = computed<AccountGroup[]>(() => {
   const byAccount = new Map<

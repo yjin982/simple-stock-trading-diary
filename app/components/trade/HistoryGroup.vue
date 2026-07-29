@@ -183,34 +183,13 @@
                   card ? 'px-4' : '',
                 ]"
               >
-                <template v-if="deletingId === trade.id">
-                  <button
-                    class="mr-1 rounded px-1.5 py-0.5 text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    @click="confirmDelete(trade.id!)"
-                  >
-                    삭제
-                  </button>
-                  <button
-                    class="rounded px-1.5 py-0.5 text-xs font-medium border border-input bg-background hover:bg-accent"
-                    @click="deletingId = null"
-                  >
-                    취소
-                  </button>
-                </template>
-                <template v-else>
-                  <button
-                    class="mr-0.5 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-                    @click="emit('edit-trade', trade.id!)"
-                  >
-                    <Pencil class="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    class="p-1 rounded text-muted-foreground hover:bg-accent hover:text-destructive"
-                    @click="deletingId = trade.id ?? null"
-                  >
-                    <Trash2 class="h-3.5 w-3.5" />
-                  </button>
-                </template>
+                <UiRowActions
+                  :confirming="deletingId === trade.id"
+                  @edit="emit('edit-trade', trade.id!)"
+                  @request-delete="deletingId = trade.id ?? null"
+                  @confirm-delete="confirmDelete(trade.id!)"
+                  @cancel-delete="deletingId = null"
+                />
               </td>
             </tr>
           </tbody>
@@ -229,7 +208,7 @@
 </template>
 
 <script setup lang="ts">
-import { FileX, Pencil, Trash2 } from "@lucide/vue";
+import { FileX } from "@lucide/vue";
 import type { TradeItem } from "~/types";
 
 interface Props {

@@ -119,5 +119,12 @@ export const useAccountsStore = defineStore('accounts', () => {
 
   function clearError() { error.value = null }
 
-  return { items, loading, error, fetchAll, add, update, remove, clearError }
+  function getBrokerUrl(accountId: string): string {
+    const account = items.value.find(a => a.id === accountId)
+    return account?.brokerName
+      ? `/accounts/${encodeURIComponent(account.brokerName)}`
+      : '/accounts'
+  }
+
+  return { items, loading, error, fetchAll, add, update, remove, clearError, getBrokerUrl }
 })

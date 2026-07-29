@@ -35,7 +35,7 @@
               </td>
               <!-- 계좌명 -->
               <td class="py-3 text-xs text-muted-foreground whitespace-nowrap">
-                <NuxtLink :to="getBrokerUrl(h.accountId)" class="transition-colors hover:text-foreground hover:underline">
+                <NuxtLink :to="accountsStore.getBrokerUrl(h.accountId)" class="transition-colors hover:text-foreground hover:underline">
                   {{ h.accountName ?? '-' }}
                 </NuxtLink>
               </td>
@@ -77,15 +77,7 @@ const props = defineProps<{
 }>()
 
 const accountsStore = useAccountsStore()
-const { usdKrw } = useExchangeRate()
-const krwEquiv = (usd: number) => usdKrw.value ? fmtKRWEquiv(usd, usdKrw.value) : null
-
-function getBrokerUrl(accountId: string): string {
-  const account = accountsStore.items.find(a => a.id === accountId)
-  return account?.brokerName
-    ? `/accounts/${encodeURIComponent(account.brokerName)}`
-    : '/accounts'
-}
+const { krwEquiv } = useExchangeRate()
 
 type HoldingGroup = {
   stockCode: string

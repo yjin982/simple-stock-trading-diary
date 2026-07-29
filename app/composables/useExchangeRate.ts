@@ -24,5 +24,8 @@ export function useExchangeRate() {
       });
   }
 
-  return { usdKrw };
+  const krwEquiv = (usd: number) =>
+    usdKrw.value ? fmtKRWEquiv(usd, usdKrw.value) : null;
+
+  return { usdKrw, krwEquiv };
 }

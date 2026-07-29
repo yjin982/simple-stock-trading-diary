@@ -53,7 +53,7 @@ const props = defineProps<{
   isAggregate?: boolean
 }>()
 
-const { usdKrw } = useExchangeRate()
+const { krwEquiv: baseKrwEquiv } = useExchangeRate()
 const isUSD = computed(() => props.data.currency === 'USD')
-const krwEquiv = (usd: number) => (isUSD.value && usdKrw.value) ? fmtKRWEquiv(usd, usdKrw.value) : undefined
+const krwEquiv = (usd: number) => isUSD.value ? (baseKrwEquiv(usd) ?? undefined) : undefined
 </script>
