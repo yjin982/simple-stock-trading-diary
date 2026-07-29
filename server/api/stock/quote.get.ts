@@ -3,6 +3,20 @@ import type { QuotePriceMap } from "~/types";
 
 const yahooFinance = new YahooFinance();
 
+// Yahoo는 "USDKRW=X"로 요청해도 응답 symbol을 "KRW=X"처럼 축약형으로
+// 돌려줄 때가 있다 (같은 심볼도 요청마다 비일관적). 응답을 요청 심볼 기준으로
+// 매핑해야 클라이언트의 키 조회(priceMap[symbol])가 항상 일치한다.
+function resolveRequestedSymbol(
+  requested: string[],
+  returnedSymbol: string,
+): string {
+  if (requested.includes(returnedSymbol)) return returnedSymbol;
+  const match = requested.find(
+    (s) => s.startsWith("USD") && s.endsWith("=X") && s.slice(3) === returnedSymbol,
+  );
+  return match ?? returnedSymbol;
+}
+
 export default defineCachedEventHandler(
   async (event): Promise<QuotePriceMap> => {
     const { symbols } = getQuery(event);
@@ -42,7 +56,8 @@ export default defineCachedEventHandler(
           : typeof t === "number"
             ? new Date(t * 1000).toISOString()
             : null;
-      result[quote.symbol] = { price: quote.regularMarketPrice, time: isoTime };
+      const key = resolveRequestedSymbol(symbolList, quote.symbol);
+      result[key] = { price: quote.regularMarketPrice, time: isoTime };
     }
 
     return result;
