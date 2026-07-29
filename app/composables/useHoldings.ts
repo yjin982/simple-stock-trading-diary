@@ -24,33 +24,9 @@ export function useHoldings(trades: Ref<Trade[]>) {
     priceTime,
   } = usePriceMap(yahooSymbols);
 
-  const holdings = computed<Holding[]>(() => {
-    const result: Holding[] = [];
-    for (const pos of positions.value.values()) {
-      const quantity = lotsQty(pos.lots);
-      if (quantity <= 0) continue;
-      const totalCost = lotsCost(pos.lots);
-      const avgPrice = quantity > 0 ? totalCost / quantity : 0;
-      const sym = toYahooSymbol(pos.stockCode, pos.market, pos.exchange);
-      const currentPrice = priceMap.value[sym] ?? avgPrice;
-      const evalAmount = currentPrice * quantity;
-      const pnl = calcPnl(evalAmount, totalCost);
-      result.push({
-        accountId: pos.accountId,
-        accountName: pos.accountName,
-        stockCode: pos.stockCode,
-        stockName: pos.stockName,
-        market: pos.market,
-        currency: pos.currency,
-        quantity,
-        avgPrice,
-        currentPrice,
-        pnl,
-        pnlRate: calcPnlRate(pnl, totalCost),
-      });
-    }
-    return result;
-  });
+  const holdings = computed<Holding[]>(() =>
+    computeHoldingsFromPositions(positions.value.values(), priceMap.value),
+  );
 
   return { holdings, pricesLoading, priceTime };
 }

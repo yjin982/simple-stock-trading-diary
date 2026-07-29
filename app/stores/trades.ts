@@ -18,6 +18,36 @@ type TradeRow = {
   accounts?: { alias: string; broker_name: string } | null
 }
 
+type TradePayload = {
+  accountId: string
+  type: 'BUY' | 'SELL'
+  stockCode: string
+  stockName: string
+  market: 'KR' | 'US'
+  exchange?: 'KOSPI' | 'KOSDAQ'
+  currency: 'KRW' | 'USD'
+  price: number
+  quantity: number
+  tradeDate: string
+  memo?: string
+}
+
+function toTradeRow(payload: TradePayload) {
+  return {
+    account_id: payload.accountId,
+    type: payload.type,
+    stock_code: payload.stockCode,
+    stock_name: payload.stockName,
+    market: payload.market,
+    exchange: payload.exchange ?? null,
+    currency: payload.currency,
+    price: payload.price,
+    quantity: payload.quantity,
+    trade_date: payload.tradeDate,
+    memo: payload.memo || null,
+  }
+}
+
 function mapTrade(row: TradeRow): Trade {
   return {
     id: row.id,
@@ -86,19 +116,7 @@ export const useTradesStore = defineStore('trades', () => {
     loading.value = false
   }
 
-  async function add(payload: {
-    accountId: string
-    type: 'BUY' | 'SELL'
-    stockCode: string
-    stockName: string
-    market: 'KR' | 'US'
-    exchange?: 'KOSPI' | 'KOSDAQ'
-    currency: 'KRW' | 'USD'
-    price: number
-    quantity: number
-    tradeDate: string
-    memo?: string
-  }): Promise<Trade | null> {
+  async function add(payload: TradePayload): Promise<Trade | null> {
     error.value = null
 
     const { data: { session } } = await client.auth.getSession()
@@ -106,20 +124,7 @@ export const useTradesStore = defineStore('trades', () => {
 
     const { data, error: err } = await client
       .from('trades')
-      .insert({
-        user_id: session.user.id,
-        account_id: payload.accountId,
-        type: payload.type,
-        stock_code: payload.stockCode,
-        stock_name: payload.stockName,
-        market: payload.market,
-        exchange: payload.exchange ?? null,
-        currency: payload.currency,
-        price: payload.price,
-        quantity: payload.quantity,
-        trade_date: payload.tradeDate,
-        memo: payload.memo || null,
-      })
+      .insert({ user_id: session.user.id, ...toTradeRow(payload) })
       .select('*, accounts(alias, broker_name)')
       .single()
 
@@ -135,36 +140,12 @@ export const useTradesStore = defineStore('trades', () => {
     return trade
   }
 
-  async function update(id: string, payload: {
-    accountId: string
-    type: 'BUY' | 'SELL'
-    stockCode: string
-    stockName: string
-    market: 'KR' | 'US'
-    exchange?: 'KOSPI' | 'KOSDAQ'
-    currency: 'KRW' | 'USD'
-    price: number
-    quantity: number
-    tradeDate: string
-    memo?: string
-  }): Promise<Trade | null> {
+  async function update(id: string, payload: TradePayload): Promise<Trade | null> {
     error.value = null
 
     const { data, error: err } = await client
       .from('trades')
-      .update({
-        account_id: payload.accountId,
-        type: payload.type,
-        stock_code: payload.stockCode,
-        stock_name: payload.stockName,
-        market: payload.market,
-        exchange: payload.exchange ?? null,
-        currency: payload.currency,
-        price: payload.price,
-        quantity: payload.quantity,
-        trade_date: payload.tradeDate,
-        memo: payload.memo || null,
-      })
+      .update(toTradeRow(payload))
       .eq('id', id)
       .select('*, accounts(alias, broker_name)')
       .single()

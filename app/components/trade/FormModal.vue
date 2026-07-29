@@ -149,19 +149,23 @@ const selectedAccountCurrency = computed(() => {
 
 const today = todayKST()
 
-const form = reactive({
-  type: 'BUY' as 'BUY' | 'SELL',
-  date: props.defaultDate ?? today,
-  accountId: '',
-  stockName: '',
-  stockCode: '',
-  market: '' as 'KR' | 'US' | '',
-  exchange: undefined as 'KOSPI' | 'KOSDAQ' | undefined,
-  currency: '' as 'KRW' | 'USD' | '',
-  price: '',
-  quantity: '',
-  memo: '',
-})
+function emptyForm() {
+  return {
+    type: 'BUY' as 'BUY' | 'SELL',
+    date: props.defaultDate ?? today,
+    accountId: '',
+    stockName: '',
+    stockCode: '',
+    market: '' as 'KR' | 'US' | '',
+    exchange: undefined as 'KOSPI' | 'KOSDAQ' | undefined,
+    currency: '' as 'KRW' | 'USD' | '',
+    price: '',
+    quantity: '',
+    memo: '',
+  }
+}
+
+const form = reactive(emptyForm())
 
 const errors = reactive({
   date: '',
@@ -214,19 +218,7 @@ watch(
         })
       })
     } else {
-      Object.assign(form, {
-        type: 'BUY',
-        date: props.defaultDate ?? today,
-        accountId: '',
-        stockName: '',
-        stockCode: '',
-        market: '',
-        exchange: undefined,
-        currency: '',
-        price: '',
-        quantity: '',
-        memo: '',
-      })
+      Object.assign(form, emptyForm())
       stockSearchRef.value?.reset()
     }
   },

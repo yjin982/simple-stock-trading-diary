@@ -214,22 +214,17 @@ const yahooSymbols = computed(() =>
 const { priceMap, priceTime } = usePriceMap(yahooSymbols);
 
 const accountSummaryById = computed(() => {
+  const holdings = computeHoldingsFromPositions(allPositions.value.values(), priceMap.value);
+
   type Acc = { holdingCount: number; krwCost: number; krwEval: number; usdCost: number; usdEval: number };
   const acc = new Map<string, Acc>();
 
-  for (const pos of allPositions.value.values()) {
-    const qty = lotsQty(pos.lots);
-    if (qty <= 0) continue;
-
-    const { accountId } = pos;
-    if (!acc.has(accountId)) acc.set(accountId, { holdingCount: 0, krwCost: 0, krwEval: 0, usdCost: 0, usdEval: 0 });
-    const a = acc.get(accountId)!;
+  for (const h of holdings) {
+    if (!acc.has(h.accountId)) acc.set(h.accountId, { holdingCount: 0, krwCost: 0, krwEval: 0, usdCost: 0, usdEval: 0 });
+    const a = acc.get(h.accountId)!;
     a.holdingCount++;
-    const cost = lotsCost(pos.lots);
-    const sym = toYahooSymbol(pos.stockCode, pos.market, pos.exchange);
-    const evalAmt = (priceMap.value[sym] ?? (cost / qty)) * qty;
-    if (pos.currency === "KRW") { a.krwCost += cost; a.krwEval += evalAmt; }
-    else { a.usdCost += cost; a.usdEval += evalAmt; }
+    if (h.currency === "KRW") { a.krwCost += h.totalCost; a.krwEval += h.evalAmount; }
+    else { a.usdCost += h.totalCost; a.usdEval += h.evalAmount; }
   }
 
   const result = new Map<string, AccountSummary>();

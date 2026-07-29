@@ -219,15 +219,30 @@
               </td>
               <td class="hidden px-5 py-2.5 align-top text-right sm:table-cell">
                 <div>{{ fmtCurrency(h.avgPrice, h.currency) }}</div>
-                <div v-if="h.currency === 'USD'" class="text-xs text-muted-foreground">{{ krwEquiv(h.avgPrice) }}</div>
+                <div
+                  v-if="h.currency === 'USD'"
+                  class="text-xs text-muted-foreground"
+                >
+                  {{ krwEquiv(h.avgPrice) }}
+                </div>
               </td>
               <td class="hidden px-5 py-2.5 align-top text-right sm:table-cell">
                 <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
-                <div v-if="h.currency === 'USD'" class="text-xs text-muted-foreground">{{ krwEquiv(h.currentPrice) }}</div>
+                <div
+                  v-if="h.currency === 'USD'"
+                  class="text-xs text-muted-foreground"
+                >
+                  {{ krwEquiv(h.currentPrice) }}
+                </div>
               </td>
               <td class="px-5 py-2.5 align-top text-right font-medium">
                 <div>{{ fmtCurrency(h.evalAmount, h.currency) }}</div>
-                <div v-if="h.currency === 'USD'" class="text-xs font-normal text-muted-foreground">{{ krwEquiv(h.evalAmount) }}</div>
+                <div
+                  v-if="h.currency === 'USD'"
+                  class="text-xs font-normal text-muted-foreground"
+                >
+                  {{ krwEquiv(h.evalAmount) }}
+                </div>
               </td>
               <td
                 class="px-5 py-2.5 align-top text-right"
@@ -235,7 +250,12 @@
               >
                 <div class="font-medium">{{ fmtPnl(h.pnl, h.currency) }}</div>
                 <div class="text-xs">{{ fmtPnlRate(h.pnlRate) }}</div>
-                <div v-if="h.currency === 'USD'" class="text-xs text-muted-foreground">{{ krwEquiv(h.pnl) }}</div>
+                <div
+                  v-if="h.currency === 'USD'"
+                  class="text-xs text-muted-foreground"
+                >
+                  {{ krwEquiv(h.pnl) }}
+                </div>
               </td>
             </tr>
           </tbody>
@@ -279,7 +299,7 @@
 definePageMeta({ middleware: "auth" });
 
 import { Building2, ChevronLeft, Wallet } from "@lucide/vue";
-import type { FifoPosition } from "~/utils/calc";
+import type { PositionHolding } from "~/utils/calc";
 import type { Trade } from "~/types";
 
 const route = useRoute();
@@ -308,54 +328,9 @@ const yahooSymbols = computed(() =>
 
 const { priceMap, priceTime } = usePriceMap(yahooSymbols);
 
-const { usdKrw } = useExchangeRate()
-const krwEquiv = (usd: number) => usdKrw.value ? fmtKRWEquiv(usd, usdKrw.value) : null
+const { krwEquiv } = useExchangeRate();
 
-type AccountHolding = {
-  stockCode: string;
-  stockName: string;
-  market: "KR" | "US";
-  currency: "KRW" | "USD";
-  quantity: number;
-  avgPrice: number;
-  totalCost: number;
-  currentPrice: number;
-  evalAmount: number;
-  pnl: number;
-  pnlRate: number;
-};
-
-function computeHoldings(accountPositions: FifoPosition[]): AccountHolding[] {
-  const result: AccountHolding[] = [];
-
-  for (const pos of accountPositions) {
-    const quantity = lotsQty(pos.lots);
-    if (quantity <= 0) continue;
-    const totalCost = lotsCost(pos.lots);
-    const avgPrice = quantity > 0 ? totalCost / quantity : 0;
-    const sym = toYahooSymbol(pos.stockCode, pos.market, pos.exchange);
-    const currentPrice = priceMap.value[sym] ?? avgPrice;
-    const evalAmount = currentPrice * quantity;
-    const pnl = calcPnl(evalAmount, totalCost);
-
-    result.push({
-      stockCode: pos.stockCode,
-      stockName: pos.stockName,
-      market: pos.market,
-      currency: pos.currency,
-      quantity,
-      avgPrice,
-      totalCost,
-      currentPrice,
-      evalAmount,
-      pnl,
-      pnlRate: calcPnlRate(pnl, totalCost),
-    });
-  }
-  return result;
-}
-
-function computeAccountSummary(trades: Trade[], holdings: AccountHolding[]) {
+function computeAccountSummary(trades: Trade[], holdings: PositionHolding[]) {
   const realized = computeRealizedPnl(trades);
 
   const krw = holdings.filter((h) => h.currency === "KRW");
@@ -387,8 +362,10 @@ function computeAccountSummary(trades: Trade[], holdings: AccountHolding[]) {
 const accountsWithHoldings = computed(() =>
   brokerAccounts.value.map((account) => {
     const trades = tradesStore.items.filter((t) => t.accountId === account.id);
-    const positions = [...brokerPositions.value.values()].filter((pos) => pos.accountId === account.id);
-    const holdings = computeHoldings(positions);
+    const positions = [...brokerPositions.value.values()].filter(
+      (pos) => pos.accountId === account.id,
+    );
+    const holdings = computeHoldingsFromPositions(positions, priceMap.value);
     return {
       account,
       holdings,
