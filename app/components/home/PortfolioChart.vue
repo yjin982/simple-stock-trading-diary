@@ -82,7 +82,7 @@
             class="w-full max-h-36 overflow-y-auto space-y-1.5 pr-0.5 md:w-auto md:min-w-[140px]"
           >
             <div
-              v-for="d in stockLegend"
+              v-for="d in stockItems"
               :key="d.stockCode"
               class="flex items-center gap-2 text-xs"
             >
@@ -243,8 +243,6 @@ const stockItems = computed(() => {
     color: STOCK_COLORS[i % STOCK_COLORS.length]!,
   }));
 });
-
-const stockLegend = computed(() => stockItems.value);
 
 const stockChartData = computed<ChartData<"doughnut">>(() => ({
   labels: stockItems.value.map((d) => d.stockName),
