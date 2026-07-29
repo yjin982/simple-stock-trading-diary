@@ -10,13 +10,13 @@
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <UiCard title="보유 종목" :value="`${uniqueStockCount}개`" />
       <UiCard
-        title="국내 평가금액"
+        title="국내 평가금액/평가손익"
         :value="fmtKRW(summary.krwTotal)"
         :sub-value="fmtPnl(summary.krwPnl, 'KRW')"
         :trend="pnlTrend(summary.krwPnl)"
       />
       <UiCard
-        title="해외 평가금액"
+        title="해외 평가금액/평가손익"
         :value="fmtUSD(summary.usdTotal)"
         :sub-value="fmtPnl(summary.usdPnl, 'USD')"
         :trend="pnlTrend(summary.usdPnl)"
@@ -240,7 +240,7 @@ definePageMeta({ middleware: "auth" });
 import { ArrowDown, ArrowUp, Briefcase } from "@lucide/vue";
 
 type Market = "all" | "KR" | "US";
-type SortKey = "pnlRate" | "pnl" | "total" | "name";
+type SortKey = "pnlRate" | "pnl" | "total" | "quantity" | "name";
 
 const MARKET_FILTERS: { label: string; value: Market }[] = [
   { label: "전체", value: "all" },
@@ -252,6 +252,7 @@ const SORT_OPTIONS: { label: string; value: SortKey }[] = [
   { label: "수익률", value: "pnlRate" },
   { label: "손익금액", value: "pnl" },
   { label: "평가금액", value: "total" },
+  { label: "보유수량", value: "quantity" },
   { label: "종목명", value: "name" },
 ];
 
@@ -263,6 +264,10 @@ import type { Holding } from "~/types";
 const { usdKrw } = useExchangeRate();
 const krwEquiv = (usd: number) =>
   usdKrw.value ? fmtKRWEquiv(usd, usdKrw.value) : null;
+
+function toKRW(currency: "KRW" | "USD", amount: number): number {
+  return currency === "USD" ? amount * (usdKrw.value ?? 0) : amount;
+}
 
 const {
   holdings: allHoldings,
@@ -323,6 +328,7 @@ type HoldingGroup = {
   rows: Holding[];
   totalEval: number;
   totalPnl: number;
+  totalQuantity: number;
   groupRate: number;
 };
 
@@ -338,6 +344,7 @@ const groupedHoldings = computed<HoldingGroup[]>(() => {
         rows: [],
         totalEval: 0,
         totalPnl: 0,
+        totalQuantity: 0,
         groupRate: 0,
       });
     }
@@ -345,6 +352,7 @@ const groupedHoldings = computed<HoldingGroup[]>(() => {
     g.rows.push(h);
     g.totalEval += h.currentPrice * h.quantity;
     g.totalPnl += h.pnl;
+    g.totalQuantity += h.quantity;
   }
   for (const g of map.values()) {
     const totalCost = g.totalEval - g.totalPnl;
@@ -362,10 +370,13 @@ const sortedGroups = computed<HoldingGroup[]>(() => {
         diff = a.groupRate - b.groupRate;
         break;
       case "pnl":
-        diff = a.totalPnl - b.totalPnl;
+        diff = toKRW(a.currency, a.totalPnl) - toKRW(b.currency, b.totalPnl);
         break;
       case "total":
-        diff = a.totalEval - b.totalEval;
+        diff = toKRW(a.currency, a.totalEval) - toKRW(b.currency, b.totalEval);
+        break;
+      case "quantity":
+        diff = a.totalQuantity - b.totalQuantity;
         break;
       case "name":
         diff = a.stockName.localeCompare(b.stockName, "ko");
@@ -379,23 +390,16 @@ const sortedGroups = computed<HoldingGroup[]>(() => {
 const summary = computed(() => {
   const krw = allHoldings.value.filter((h) => h.currency === "KRW");
   const usd = allHoldings.value.filter((h) => h.currency === "USD");
-  const allGroups = (() => {
-    const map = new Map<string, { pnl: number; cost: number }>();
-    for (const h of allHoldings.value) {
-      const cost = h.currentPrice * h.quantity - h.pnl;
-      if (!map.has(h.stockCode)) map.set(h.stockCode, { pnl: 0, cost: 0 });
-      const s = map.get(h.stockCode)!;
-      s.pnl += h.pnl;
-      s.cost += cost;
-    }
-    return [...map.values()];
-  })();
-  const avgRate = allGroups.length
-    ? allGroups.reduce(
-        (s, g) => s + (g.cost > 0 ? (g.pnl / g.cost) * 100 : 0),
-        0,
-      ) / allGroups.length
-    : 0;
+  // KRW/USD 혼합 가중평균은 환율 환산 후 합산해야 함 (원화-달러 원가를 그대로 더하면 왜곡됨)
+  const totalPnl = allHoldings.value.reduce(
+    (s, h) => s + toKRW(h.currency, h.pnl),
+    0,
+  );
+  const totalCost = allHoldings.value.reduce(
+    (s, h) => s + toKRW(h.currency, h.currentPrice * h.quantity - h.pnl),
+    0,
+  );
+  const avgRate = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
   return {
     krwTotal: krw.reduce((s, h) => s + h.currentPrice * h.quantity, 0),
     krwPnl: krw.reduce((s, h) => s + h.pnl, 0),
