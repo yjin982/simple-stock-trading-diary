@@ -50,52 +50,57 @@ async function fetchKrxMarket(
   return res?.OutBlock_1 ?? [];
 }
 
-export default defineCachedEventHandler(
-  async (event) => {
-    const { name } = getQuery(event);
-    if (!name) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: "검색어(name)가 필요합니다.",
-      });
-    }
+type KrxItemWithExchange = KrxBaseInfoItem & { _exchange: "KOSPI" | "KOSDAQ" };
 
+// KOSPI+KOSDAQ 전체 상장 목록은 검색어와 무관하게 하루 동안 동일하므로,
+// 검색어별로 매번 새로 받아오지 않도록 날짜(basDd) 기준으로만 캐싱한다.
+// 실제 검색어 필터링은 이 캐시된 전체 목록에서 매 요청마다(캐시 없이) 수행한다.
+const fetchAllKrStocks = defineCachedFunction(
+  async (basDd: string): Promise<KrxItemWithExchange[]> => {
     const config = useRuntimeConfig();
-    const basDd = getRecentWeekday();
-
     const [kospiItems, kosdaqItems] = await Promise.all([
       fetchKrxMarket(config.krxAuthKey, "KOSPI", basDd),
       fetchKrxMarket(config.krxAuthKey, "KOSDAQ", basDd),
     ]);
-
-    const query = String(name).trim().toLowerCase();
-
     return [
       ...kospiItems.map((item) => ({ ...item, _exchange: "KOSPI" as const })),
       ...kosdaqItems.map((item) => ({ ...item, _exchange: "KOSDAQ" as const })),
-    ]
-      .filter((item) => {
-        const nm = item.ISU_NM.toLowerCase();
-        const abbr = item.ISU_ABBRV.toLowerCase();
-        return nm.includes(query) || abbr.includes(query);
-      })
-      .map(
-        (item): Stock => ({
-          code: item.ISU_SRT_CD,
-          name: item.ISU_ABBRV,
-          market: "KR",
-          exchange: item._exchange,
-          currency: "KRW",
-          price: 0,
-          stockType: item.KIND_STKCERT_TP_NM,
-        }),
-      );
+    ];
   },
   {
+    name: "krx-all-stocks",
     maxAge: 60 * 60 * 12,
-    getKey: (event) => {
-      const { name } = getQuery(event);
-      return `stock-search:${getRecentWeekday()}:${String(name).toLowerCase().trim()}`;
-    },
+    getKey: (basDd: string) => basDd,
   },
 );
+
+export default defineEventHandler(async (event) => {
+  const { name } = getQuery(event);
+  if (!name) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "검색어(name)가 필요합니다.",
+    });
+  }
+
+  const allItems = await fetchAllKrStocks(getRecentWeekday());
+  const query = String(name).trim().toLowerCase();
+
+  return allItems
+    .filter((item) => {
+      const nm = item.ISU_NM.toLowerCase();
+      const abbr = item.ISU_ABBRV.toLowerCase();
+      return nm.includes(query) || abbr.includes(query);
+    })
+    .map(
+      (item): Stock => ({
+        code: item.ISU_SRT_CD,
+        name: item.ISU_ABBRV,
+        market: "KR",
+        exchange: item._exchange,
+        currency: "KRW",
+        price: 0,
+        stockType: item.KIND_STKCERT_TP_NM,
+      }),
+    );
+});
