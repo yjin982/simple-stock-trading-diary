@@ -26,7 +26,7 @@ export default defineCachedEventHandler(async (event) => {
   };
 
   return (result.quotes ?? [])
-    .filter((q) => q.quoteType === "EQUITY")
+    .filter((q) => q.quoteType === "EQUITY" || q.quoteType === "ETF")
     .map(
       (q): Stock => ({
         code: q.symbol,

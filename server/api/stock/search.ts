@@ -74,6 +74,35 @@ const fetchAllKrStocks = defineCachedFunction(
   },
 );
 
+interface KrxEtfItem {
+  ISU_CD: string;
+  ISU_NM: string;
+}
+
+// ETF는 종목코드가 이미 6자리 단축코드이고 거래소 구분이 없어 KRX 호출 1번으로 전체를 커버한다.
+const fetchAllKrEtfs = defineCachedFunction(
+  async (basDd: string): Promise<KrxEtfItem[]> => {
+    const config = useRuntimeConfig();
+    const res = await $fetch<{ OutBlock_1?: KrxEtfItem[] }>(
+      "https://data-dbg.krx.co.kr/svc/apis/etp/etf_bydd_trd",
+      {
+        method: "POST",
+        headers: {
+          AUTH_KEY: config.krxAuthKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ basDd }),
+      },
+    );
+    return res?.OutBlock_1 ?? [];
+  },
+  {
+    name: "krx-all-etfs",
+    maxAge: 60 * 60 * 12,
+    getKey: (basDd: string) => basDd,
+  },
+);
+
 export default defineEventHandler(async (event) => {
   const { name } = getQuery(event);
   if (!name) {
@@ -83,10 +112,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const allItems = await fetchAllKrStocks(getRecentWeekday());
+  const basDd = getRecentWeekday();
+  const [allStocks, allEtfs] = await Promise.all([
+    fetchAllKrStocks(basDd),
+    fetchAllKrEtfs(basDd),
+  ]);
   const query = String(name).trim().toLowerCase();
 
-  return allItems
+  const stockResults = allStocks
     .filter((item) => {
       const nm = item.ISU_NM.toLowerCase();
       const abbr = item.ISU_ABBRV.toLowerCase();
@@ -103,4 +136,19 @@ export default defineEventHandler(async (event) => {
         stockType: item.KIND_STKCERT_TP_NM,
       }),
     );
+
+  const etfResults = allEtfs
+    .filter((item) => item.ISU_NM.toLowerCase().includes(query))
+    .map(
+      (item): Stock => ({
+        code: item.ISU_CD,
+        name: item.ISU_NM,
+        market: "KR",
+        currency: "KRW",
+        price: 0,
+        stockType: "ETF",
+      }),
+    );
+
+  return [...stockResults, ...etfResults];
 });
