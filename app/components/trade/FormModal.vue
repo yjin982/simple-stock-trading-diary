@@ -41,16 +41,24 @@
         <AccountSelect v-model="form.accountId" />
       </UiFormField>
 
-      <!-- 종목 검색 -->
+      <!-- 종목 검색/선택 -->
       <UiFormField
         label="종목"
         required
         :error="errors.stockCode"
-        hint="종목명 또는 코드로 검색하세요"
+        :hint="form.type === 'BUY' ? '종목명 또는 코드로 검색하세요' : '보유 중인 종목만 매도할 수 있습니다.'"
       >
         <TradeStockSearch
+          v-if="form.type === 'BUY'"
           ref="stockSearchRef"
           :account-currency="selectedAccountCurrency"
+          @select="onStockSelect"
+        />
+        <TradeHoldingSelect
+          v-else
+          ref="stockSearchRef"
+          :account-id="form.accountId"
+          :stocks="accountHoldings"
           @select="onStockSelect"
         />
       </UiFormField>
@@ -72,11 +80,17 @@
       </UiFormField>
 
       <!-- 수량 -->
-      <UiFormField label="수량" required :error="errors.quantity">
+      <UiFormField
+        label="수량"
+        required
+        :error="errors.quantity || (quantityExceedsHolding ? `보유수량(${maxQuantity}주)을 초과할 수 없습니다.` : '')"
+        :hint="form.type === 'SELL' && form.stockCode ? `보유수량 ${maxQuantity}주까지 매도할 수 있습니다.` : undefined"
+      >
         <UiInput
           v-model="form.quantity"
           type="number"
           min="1"
+          :max="maxQuantity ?? undefined"
           step="1"
           placeholder="0"
           class="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -114,6 +128,7 @@
 
 <script setup lang="ts">
 import type { Stock, Trade } from '~/types'
+import type { HoldingOption } from './HoldingSelect.vue'
 
 interface Props {
   open: boolean
@@ -134,6 +149,39 @@ const stockSearchRef = ref<{ reset: () => void; setStock: (stock: Stock) => void
 const selectedAccountCurrency = computed(() => {
   const acc = accountsStore.items.find(a => a.id === form.accountId)
   return acc?.currency ?? null
+})
+
+// 매도 시 선택 가능한 보유 종목 목록 (수정 중인 거래 자신은 FIFO 계산에서 제외해 원래 보유수량 기준으로 판단)
+const accountHoldings = computed(() => {
+  if (form.type !== 'SELL' || !form.accountId) return []
+
+  const trades = props.editTrade
+    ? tradesStore.items.filter(t => t.id !== props.editTrade!.id)
+    : tradesStore.items
+
+  const positions = buildFifoPositions(trades)
+  const holdings: HoldingOption[] = []
+
+  for (const pos of positions.values()) {
+    if (pos.accountId !== form.accountId) continue
+    const quantity = lotsQty(pos.lots)
+    if (quantity <= 0) continue
+    holdings.push({
+      code: pos.stockCode,
+      name: pos.stockName,
+      market: pos.market,
+      exchange: pos.exchange,
+      currency: pos.currency,
+      quantity,
+      avgPrice: lotsCost(pos.lots) / quantity,
+    })
+  }
+  return holdings
+})
+
+const maxQuantity = computed(() => {
+  if (form.type !== 'SELL') return null
+  return accountHoldings.value.find(h => h.code === form.stockCode)?.quantity ?? 0
 })
 
 const today = todayKST()
@@ -170,7 +218,8 @@ const isFormValid = computed(() =>
   form.stockCode !== '' &&
   Number(form.price) > 0 &&
   form.quantity !== '' &&
-  Number(form.quantity) > 0,
+  Number(form.quantity) > 0 &&
+  !quantityExceedsHolding.value,
 )
 
 const isEditMode = computed(() => !!props.editTrade)
@@ -220,19 +269,41 @@ watch(
   },
 )
 
+function resetStockFields() {
+  form.stockName = ''
+  form.stockCode = ''
+  form.market = ''
+  form.exchange = undefined
+  form.currency = ''
+  form.price = ''
+  form.quantity = ''
+  errors.stockCode = ''
+  errors.quantity = ''
+}
+
+// 계좌 변경 시: 계좌가 다르면 보유 종목/매수 가능 종목이 달라지므로 선택을 초기화
 watch(
   () => form.accountId,
   () => {
     if (isEditMode.value) return
-    form.stockName = ''
-    form.stockCode = ''
-    form.market = ''
-    form.exchange = undefined
-    form.currency = ''
-    form.price = ''
-    errors.stockCode = ''
+    resetStockFields()
   },
 )
+
+// 거래 유형 변경 시: 매수 검색 목록과 매도 보유 목록이 다르므로 선택을 초기화
+watch(
+  () => form.type,
+  () => {
+    if (isEditMode.value) return
+    resetStockFields()
+  },
+)
+
+// 매도 시 입력한 수량이 보유수량을 초과하면 실시간으로 에러 표시 + 저장 버튼 비활성화
+const quantityExceedsHolding = computed(() => {
+  if (form.type !== 'SELL' || form.quantity === '') return false
+  return Number(form.quantity) > (maxQuantity.value ?? 0)
+})
 
 function onStockSelect(stock: { code: string; name: string; market: 'KR' | 'US'; exchange?: 'KOSPI' | 'KOSDAQ'; currency: 'KRW' | 'USD'; price: number }) {
   form.stockName = stock.name
@@ -249,7 +320,16 @@ function validate(): boolean {
   errors.accountId = form.accountId ? '' : '계좌를 선택하세요.'
   errors.stockCode = form.stockCode ? '' : '종목을 선택하세요.'
   errors.price = Number(form.price) > 0 ? '' : '단가를 입력하세요.'
-  errors.quantity = form.quantity && Number(form.quantity) > 0 ? '' : '수량을 1 이상 입력하세요.'
+
+  if (form.type === 'SELL') {
+    const max = maxQuantity.value ?? 0
+    errors.quantity = form.quantity && Number(form.quantity) > 0 && Number(form.quantity) <= max
+      ? ''
+      : `수량을 1~${max} 이하로 입력하세요.`
+  } else {
+    errors.quantity = form.quantity && Number(form.quantity) > 0 ? '' : '수량을 1 이상 입력하세요.'
+  }
+
   return Object.values(errors).every((e) => e === '')
 }
 
