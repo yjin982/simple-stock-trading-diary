@@ -35,20 +35,9 @@
           <UiTabGroup v-model="selectedPeriod" :options="PERIODS" />
 
           <template v-if="selectedPeriod === 'custom'">
-            <input
-              v-model="customStart"
-              type="date"
-              :max="customEnd || today"
-              class="px-3 text-sm border rounded-md shadow-sm h-9 border-input bg-background focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
+            <UiInput v-model="customStart" type="date" :max="customEnd || today" />
             <span class="text-sm text-muted-foreground">~</span>
-            <input
-              v-model="customEnd"
-              type="date"
-              :min="customStart"
-              :max="today"
-              class="px-3 text-sm border rounded-md shadow-sm h-9 border-input bg-background focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
+            <UiInput v-model="customEnd" type="date" :min="customStart" :max="today" />
           </template>
         </div>
 

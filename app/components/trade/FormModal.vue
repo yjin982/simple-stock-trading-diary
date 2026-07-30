@@ -33,11 +33,7 @@
 
       <!-- 거래일 -->
       <UiFormField label="거래일" required :error="errors.date">
-        <input
-          v-model="form.date"
-          type="date"
-          class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        />
+        <UiInput v-model="form.date" type="date" class="w-full" />
       </UiFormField>
 
       <!-- 계좌 선택 -->
@@ -66,34 +62,33 @@
         :error="errors.price"
         hint="단가를 입력하세요."
       >
-        <input
+        <UiInput
           v-model="form.price"
           type="text"
           inputmode="decimal"
           placeholder="0"
-          class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          class="w-full"
         />
       </UiFormField>
 
       <!-- 수량 -->
       <UiFormField label="수량" required :error="errors.quantity">
-        <input
+        <UiInput
           v-model="form.quantity"
           type="number"
           min="1"
           step="1"
           placeholder="0"
-          class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          class="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
       </UiFormField>
 
       <!-- 매수/매도 이유 -->
       <UiFormField :label="form.type === 'BUY' ? '매수 이유' : '매도 이유'">
-        <textarea
+        <UiTextarea
           v-model="form.memo"
           rows="2"
           placeholder="이유를 입력하세요 (선택)"
-          class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
         />
       </UiFormField>
 
@@ -103,21 +98,15 @@
 
       <!-- 버튼 -->
       <div class="flex gap-2 pt-1">
-        <button
-          type="button"
-          class="flex-1 rounded-md border border-input bg-background py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          @click="emit('update:open', false)"
-        >
+        <UiButton variant="secondary" @click="emit('update:open', false)">
           취소
-        </button>
-        <button
+        </UiButton>
+        <UiButton
           type="submit"
-          class="flex-1 rounded-md py-2 text-sm font-semibold text-white transition-colors"
-          :class="isFormValid && !tradesStore.loading ? 'bg-primary hover:bg-primary/90' : 'cursor-not-allowed bg-primary/40'"
           :disabled="!isFormValid || tradesStore.loading"
         >
           {{ tradesStore.loading ? '저장 중...' : editTrade ? '수정' : '저장' }}
-        </button>
+        </UiButton>
       </div>
     </form>
   </UiDialog>

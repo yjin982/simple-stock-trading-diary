@@ -7,31 +7,31 @@
     <form class="space-y-4 p-5 pb-6" @submit.prevent="handleSubmit">
       <!-- 증권사 -->
       <UiFormField label="증권사" required :error="errors.brokerName">
-        <input
+        <UiInput
           v-model="form.brokerName"
           type="text"
           placeholder="예: 키움증권, 토스증권"
-          class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          class="w-full"
         />
       </UiFormField>
 
       <!-- 계좌 별칭 -->
       <UiFormField label="계좌 별칭" required :error="errors.alias">
-        <input
+        <UiInput
           v-model="form.alias"
           type="text"
           placeholder="예: ISA계좌, 연금저축펀드"
-          class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          class="w-full"
         />
       </UiFormField>
 
       <!-- 계좌번호 (선택) -->
       <UiFormField label="계좌번호" hint="선택 입력">
-        <input
+        <UiInput
           v-model="form.accountNumber"
           type="text"
           placeholder="예: 1234-5678"
-          class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          class="w-full"
         />
       </UiFormField>
 
@@ -61,20 +61,12 @@
 
       <!-- 버튼 -->
       <div class="flex gap-2 pt-1">
-        <button
-          type="button"
-          class="flex-1 rounded-md border border-input bg-background py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          @click="emit('update:open', false)"
-        >
+        <UiButton variant="secondary" @click="emit('update:open', false)">
           취소
-        </button>
-        <button
-          type="submit"
-          :disabled="accountsStore.loading"
-          class="flex-1 rounded-md bg-primary py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-        >
+        </UiButton>
+        <UiButton type="submit" :disabled="accountsStore.loading">
           {{ accountsStore.loading ? "저장 중..." : isEdit ? "수정" : "추가" }}
-        </button>
+        </UiButton>
       </div>
     </form>
   </UiDialog>

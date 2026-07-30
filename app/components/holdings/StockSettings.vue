@@ -27,12 +27,11 @@
       </div>
       <div>
         <label class="mb-1.5 block text-xs font-medium text-muted-foreground">종목 메모</label>
-        <textarea
+        <UiTextarea
           v-model="settingsForm.memo"
           rows="3"
           maxlength="500"
           placeholder="이 종목에 대한 메모를 입력하세요."
-          class="w-full px-3 py-2 text-sm border rounded-md shadow-sm resize-none border-input bg-background focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
         <p class="mt-0.5 text-right text-[10px] text-muted-foreground">
           {{ (settingsForm.memo ?? '').length }}/500
