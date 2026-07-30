@@ -73,9 +73,9 @@
             :class="dayClass(day)"
             @click="selectDate(day)"
           >
-            <span :class="getDayTradeType(day) ? '-mt-0.5' : ''">{{ day }}</span>
+            <span :class="day.tradeType ? '-mt-0.5' : ''">{{ day.dayNum }}</span>
             <span
-              v-if="getDayTradeType(day)"
+              v-if="day.tradeType"
               class="absolute bottom-1 h-1.5 w-1.5 rounded-full"
               :class="dotClass(day)"
             />
@@ -132,15 +132,8 @@ const currentYearMonth = computed(() => {
   return `${year}년 ${month}월`
 })
 
-const calendarDays = computed(() => {
-  const year = viewDate.value.getFullYear()
-  const month = viewDate.value.getMonth()
-  const firstDayOfWeek = new Date(year, month, 1).getDay()
-  const totalDays = new Date(year, month + 1, 0).getDate()
-  const days: (number | null)[] = Array(firstDayOfWeek).fill(null)
-  for (let d = 1; d <= totalDays; d++) days.push(d)
-  return days
-})
+type TradeType = 'BUY' | 'SELL' | 'BOTH' | null
+type CalendarDay = { dayNum: number; dateStr: string; tradeType: TradeType }
 
 function formatDate(day: number): string {
   const year = viewDate.value.getFullYear()
@@ -148,8 +141,8 @@ function formatDate(day: number): string {
   return `${year}-${month}-${String(day).padStart(2, '0')}`
 }
 
-function getDayTradeType(day: number): 'BUY' | 'SELL' | 'BOTH' | null {
-  const trades = tradesStore.tradesByDate[formatDate(day)]
+function getTradeType(dateStr: string): TradeType {
+  const trades = tradesStore.tradesByDate[dateStr]
   if (!trades?.length) return null
   const hasBuy = trades.some(t => t.type === 'BUY')
   const hasSell = trades.some(t => t.type === 'SELL')
@@ -157,30 +150,40 @@ function getDayTradeType(day: number): 'BUY' | 'SELL' | 'BOTH' | null {
   return hasBuy ? 'BUY' : 'SELL'
 }
 
-function selectDate(day: number) {
-  const dateStr = formatDate(day)
-  selectedDate.value = selectedDate.value === dateStr ? null : dateStr
+// 날짜 셀마다 dateStr/tradeType을 매번 다시 계산하지 않도록 한 번에 미리 구해둔다.
+const calendarDays = computed(() => {
+  const year = viewDate.value.getFullYear()
+  const month = viewDate.value.getMonth()
+  const firstDayOfWeek = new Date(year, month, 1).getDay()
+  const totalDays = new Date(year, month + 1, 0).getDate()
+  const days: (CalendarDay | null)[] = Array(firstDayOfWeek).fill(null)
+  for (let d = 1; d <= totalDays; d++) {
+    const dateStr = formatDate(d)
+    days.push({ dayNum: d, dateStr, tradeType: getTradeType(dateStr) })
+  }
+  return days
+})
+
+function selectDate(day: CalendarDay) {
+  selectedDate.value = selectedDate.value === day.dateStr ? null : day.dateStr
 }
 
-function dayClass(day: number) {
-  const dateStr = formatDate(day)
-  const isSelected = selectedDate.value === dateStr
-  const isToday = dateStr === today
-  const tradeType = getDayTradeType(day)
+function dayClass(day: CalendarDay) {
+  const isSelected = selectedDate.value === day.dateStr
+  const isToday = day.dateStr === today
 
   if (isSelected) return 'bg-primary text-primary-foreground font-semibold hover:bg-primary/90'
   if (isToday) return 'ring-1 ring-primary text-primary font-semibold hover:bg-accent'
-  if (tradeType === 'BUY') return 'font-semibold text-red-600 hover:bg-red-50'
-  if (tradeType === 'SELL') return 'font-semibold text-blue-600 hover:bg-blue-50'
-  if (tradeType === 'BOTH') return 'font-semibold text-purple-600 hover:bg-purple-50'
+  if (day.tradeType === 'BUY') return 'font-semibold text-red-600 hover:bg-red-50'
+  if (day.tradeType === 'SELL') return 'font-semibold text-blue-600 hover:bg-blue-50'
+  if (day.tradeType === 'BOTH') return 'font-semibold text-purple-600 hover:bg-purple-50'
   return 'text-muted-foreground hover:bg-accent'
 }
 
-function dotClass(day: number): string {
-  if (selectedDate.value === formatDate(day)) return 'bg-white'
-  const type = getDayTradeType(day)
-  if (type === 'BUY') return 'bg-red-500'
-  if (type === 'SELL') return 'bg-blue-500'
+function dotClass(day: CalendarDay): string {
+  if (selectedDate.value === day.dateStr) return 'bg-white'
+  if (day.tradeType === 'BUY') return 'bg-red-500'
+  if (day.tradeType === 'SELL') return 'bg-blue-500'
   return 'bg-purple-500'
 }
 

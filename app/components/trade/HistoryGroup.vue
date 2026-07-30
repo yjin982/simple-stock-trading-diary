@@ -155,7 +155,7 @@
               >
                 <NuxtLink
                   v-if="trade.accountId"
-                  :to="getBrokerUrl(trade.accountId)"
+                  :to="accountsStore.getBrokerUrl(trade.accountId)"
                   class="transition-colors hover:text-foreground hover:underline"
                 >
                   {{ trade.accountName ?? "—" }}
@@ -244,13 +244,6 @@ function confirmDelete(id: string) {
 }
 
 const accountsStore = useAccountsStore()
-
-function getBrokerUrl(accountId: string): string {
-  const account = accountsStore.items.find(a => a.id === accountId)
-  return account?.brokerName
-    ? `/accounts/${encodeURIComponent(account.brokerName)}`
-    : '/accounts'
-}
 
 const formattedDate = computed(() =>
   props.date ? formatDateKo(props.date) : "",

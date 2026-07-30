@@ -1,6 +1,9 @@
 <template>
   <div>
-    <template v-for="group in accountGroups" :key="group.accountId">
+    <template
+      v-for="(group, groupIdx) in displayedAccountGroups"
+      :key="group.accountId"
+    >
       <!-- 계좌 헤더 (복수 계좌일 때만) -->
       <div
         v-if="accountGroups.length > 1"
@@ -67,11 +70,9 @@
             </tr>
           </thead>
           <tbody>
-            <template
-              v-if="getDisplayItems(group.rows, group.accountId).length"
-            >
+            <template v-if="group.displayRows.length">
               <tr
-                v-for="(row, i) in getDisplayItems(group.rows, group.accountId)"
+                v-for="(row, i) in group.displayRows"
                 :key="i"
                 class="border-b last:border-0"
               >
@@ -185,8 +186,8 @@
         class="flex items-center justify-center gap-0.5 py-3 px-5"
         :class="{
           'border-b':
-            accountGroups.length > 1 &&
-            group !== accountGroups[accountGroups.length - 1],
+            displayedAccountGroups.length > 1 &&
+            groupIdx !== displayedAccountGroups.length - 1,
         }"
       >
         <button
@@ -227,9 +228,9 @@
       <!-- 계좌 사이 구분선 (마지막 제외, 페이지네이션 없을 때) -->
       <div
         v-if="
-          accountGroups.length > 1 &&
+          displayedAccountGroups.length > 1 &&
           getTotalPages(group.rows.length) <= 1 &&
-          group !== accountGroups[accountGroups.length - 1]
+          groupIdx !== displayedAccountGroups.length - 1
         "
         class="border-b"
       />
@@ -313,6 +314,14 @@ const {
   getDisplayItems,
   getPageNumbers,
 } = useAccountPagination();
+
+// group.rows를 v-if/v-for에서 각각 다시 slice하지 않도록 페이지네이션 결과를 미리 계산해둔다.
+const displayedAccountGroups = computed(() =>
+  accountGroups.value.map((group) => ({
+    ...group,
+    displayRows: getDisplayItems(group.rows, group.accountId),
+  })),
+);
 
 watch(
   () => props.stockCode,
