@@ -160,19 +160,16 @@
           {{ accountsStore.error }}
         </p>
         <div class="flex gap-2">
-          <button
-            class="flex-1 rounded-md border border-input bg-background py-2 text-sm font-medium transition-colors hover:bg-accent"
-            @click="deleteDialogOpen = false"
-          >
+          <UiButton variant="secondary" @click="deleteDialogOpen = false">
             취소
-          </button>
-          <button
+          </UiButton>
+          <UiButton
+            variant="destructive"
             :disabled="accountsStore.loading"
-            class="flex-1 rounded-md bg-destructive py-2 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:opacity-50"
             @click="handleDelete"
           >
             {{ accountsStore.loading ? "삭제 중..." : "삭제" }}
-          </button>
+          </UiButton>
         </div>
       </div>
     </UiDialog>
@@ -192,6 +189,7 @@ import {
   Wallet,
 } from "@lucide/vue";
 import type { Account } from "~/types";
+import type { PositionHolding } from "~/utils/calc";
 
 const accountsStore = useAccountsStore();
 const tradesStore = useTradesStore();
@@ -216,25 +214,19 @@ const { priceMap, priceTime } = usePriceMap(yahooSymbols);
 const accountSummaryById = computed(() => {
   const holdings = computeHoldingsFromPositions(allPositions.value.values(), priceMap.value);
 
-  type Acc = { holdingCount: number; krwCost: number; krwEval: number; usdCost: number; usdEval: number };
-  const acc = new Map<string, Acc>();
-
+  const byAccount = new Map<string, PositionHolding[]>();
   for (const h of holdings) {
-    if (!acc.has(h.accountId)) acc.set(h.accountId, { holdingCount: 0, krwCost: 0, krwEval: 0, usdCost: 0, usdEval: 0 });
-    const a = acc.get(h.accountId)!;
-    a.holdingCount++;
-    if (h.currency === "KRW") { a.krwCost += h.totalCost; a.krwEval += h.evalAmount; }
-    else { a.usdCost += h.totalCost; a.usdEval += h.evalAmount; }
+    if (!byAccount.has(h.accountId)) byAccount.set(h.accountId, []);
+    byAccount.get(h.accountId)!.push(h);
   }
 
   const result = new Map<string, AccountSummary>();
-  for (const [accountId, a] of acc) {
-    const krwPnl = calcPnl(a.krwEval, a.krwCost);
-    const usdPnl = calcPnl(a.usdEval, a.usdCost);
+  for (const [accountId, accountHoldings] of byAccount) {
+    const agg = aggregateByCurrency(accountHoldings);
     result.set(accountId, {
-      holdingCount: a.holdingCount,
-      krw: a.krwCost > 0 ? { totalEval: a.krwEval, pnl: krwPnl, pnlRate: calcPnlRate(krwPnl, a.krwCost) } : null,
-      usd: a.usdCost > 0 ? { totalEval: a.usdEval, pnl: usdPnl, pnlRate: calcPnlRate(usdPnl, a.usdCost) } : null,
+      holdingCount: accountHoldings.length,
+      krw: agg.costKRW > 0 ? { totalEval: agg.evalKRW, pnl: agg.unrealizedKRW, pnlRate: agg.returnRateKRW } : null,
+      usd: agg.costUSD > 0 ? { totalEval: agg.evalUSD, pnl: agg.unrealizedUSD, pnlRate: agg.returnRateUSD } : null,
     });
   }
   return result;

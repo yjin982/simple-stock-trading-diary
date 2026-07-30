@@ -332,28 +332,19 @@ const { krwEquiv } = useExchangeRate();
 
 function computeAccountSummary(trades: Trade[], holdings: PositionHolding[]) {
   const realized = computeRealizedPnl(trades);
-
-  const krw = holdings.filter((h) => h.currency === "KRW");
-  const usd = holdings.filter((h) => h.currency === "USD");
-
-  const evalKRW = krw.reduce((s, h) => s + h.evalAmount, 0);
-  const evalUSD = usd.reduce((s, h) => s + h.evalAmount, 0);
-  const unrealizedKRW = krw.reduce((s, h) => s + h.pnl, 0);
-  const unrealizedUSD = usd.reduce((s, h) => s + h.pnl, 0);
-  const costKRW = krw.reduce((s, h) => s + h.totalCost, 0);
-  const costUSD = usd.reduce((s, h) => s + h.totalCost, 0);
+  const agg = aggregateByCurrency(holdings);
   const hasKRW = trades.some((t) => t.currency === "KRW");
   const hasUSD = trades.some((t) => t.currency === "USD");
 
   return {
-    evalKRW,
-    evalUSD,
-    unrealizedKRW,
-    unrealizedUSD,
+    evalKRW: agg.evalKRW,
+    evalUSD: agg.evalUSD,
+    unrealizedKRW: agg.unrealizedKRW,
+    unrealizedUSD: agg.unrealizedUSD,
     realizedKRW: realized.KRW,
     realizedUSD: realized.USD,
-    returnKRW: costKRW > 0 ? (unrealizedKRW / costKRW) * 100 : 0,
-    returnUSD: costUSD > 0 ? (unrealizedUSD / costUSD) * 100 : 0,
+    returnKRW: agg.returnRateKRW,
+    returnUSD: agg.returnRateUSD,
     hasKRW,
     hasUSD,
   };

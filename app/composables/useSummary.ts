@@ -20,25 +20,14 @@ export function useSummary(
   trades: Ref<Trade[]>,
 ) {
   return computed<Summary>(() => {
-    let evalKRW = 0,
-      evalUSD = 0,
-      costKRW = 0,
-      costUSD = 0;
+    const agg = aggregateByCurrency(
+      holdings.value.map((h) => ({
+        currency: h.currency,
+        evalAmount: h.currentPrice * h.quantity,
+        totalCost: h.avgPrice * h.quantity,
+      })),
+    );
 
-    for (const h of holdings.value) {
-      const cost = h.avgPrice * h.quantity;
-      const evalAmount = h.currentPrice * h.quantity;
-      if (h.currency === "KRW") {
-        evalKRW += evalAmount;
-        costKRW += cost;
-      } else {
-        evalUSD += evalAmount;
-        costUSD += cost;
-      }
-    }
-
-    const unrealizedKRW = evalKRW - costKRW;
-    const unrealizedUSD = evalUSD - costUSD;
     const { KRW: realizedKRW, USD: realizedUSD } = computeRealizedPnl(
       trades.value,
     );
@@ -47,16 +36,9 @@ export function useSummary(
     const hasUSD = trades.value.some((t) => t.currency === "USD");
 
     return {
-      evalKRW,
-      evalUSD,
-      costKRW,
-      costUSD,
-      unrealizedKRW,
-      unrealizedUSD,
+      ...agg,
       realizedKRW,
       realizedUSD,
-      returnRateKRW: costKRW > 0 ? (unrealizedKRW / costKRW) * 100 : 0,
-      returnRateUSD: costUSD > 0 ? (unrealizedUSD / costUSD) * 100 : 0,
       hasKRW,
       hasUSD,
     };

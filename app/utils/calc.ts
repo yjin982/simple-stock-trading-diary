@@ -144,6 +144,57 @@ export function computeHoldingsFromPositions(
   return result;
 }
 
+export type CurrencyHolding = {
+  currency: "KRW" | "USD";
+  evalAmount: number;
+  totalCost: number;
+};
+
+export type CurrencyAggregate = {
+  evalKRW: number;
+  evalUSD: number;
+  costKRW: number;
+  costUSD: number;
+  unrealizedKRW: number;
+  unrealizedUSD: number;
+  returnRateKRW: number;
+  returnRateUSD: number;
+};
+
+// 보유종목 목록을 KRW/USD로 나눠 평가금액·매입원가·평가손익·수익률을 합산
+export function aggregateByCurrency(
+  holdings: CurrencyHolding[],
+): CurrencyAggregate {
+  let evalKRW = 0,
+    evalUSD = 0,
+    costKRW = 0,
+    costUSD = 0;
+
+  for (const h of holdings) {
+    if (h.currency === "KRW") {
+      evalKRW += h.evalAmount;
+      costKRW += h.totalCost;
+    } else {
+      evalUSD += h.evalAmount;
+      costUSD += h.totalCost;
+    }
+  }
+
+  const unrealizedKRW = evalKRW - costKRW;
+  const unrealizedUSD = evalUSD - costUSD;
+
+  return {
+    evalKRW,
+    evalUSD,
+    costKRW,
+    costUSD,
+    unrealizedKRW,
+    unrealizedUSD,
+    returnRateKRW: costKRW > 0 ? (unrealizedKRW / costKRW) * 100 : 0,
+    returnRateUSD: costUSD > 0 ? (unrealizedUSD / costUSD) * 100 : 0,
+  };
+}
+
 // 실현 손익 (매도가 - 평균매수가) × 수량
 export function calcRealizedPnl(
   sellPrice: number,
