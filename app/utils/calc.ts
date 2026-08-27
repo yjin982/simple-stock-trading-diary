@@ -73,8 +73,23 @@ export function buildFifoPositions(trades: Trade[]): Map<string, FifoPosition> {
       positions.get(key)!.lots.push({ qty: t.quantity, price: t.price });
     } else {
       // 매도
-      const pos = positions.get(key);
-      if (!pos) continue; // 매도할 내역이 없음.
+      let pos = positions.get(key);
+      if (!pos) {
+        // 매수 이력이 전혀 없는 상태에서 매도부터 들어온 경우에도 잔고 부족
+        // 수량을 추적할 수 있도록 빈 포지션을 만들어둔다.
+        pos = {
+          accountId: t.accountId,
+          accountName: t.accountName,
+          stockCode: t.stockCode,
+          stockName: t.stockName,
+          market: t.market,
+          exchange: t.exchange,
+          currency: t.currency,
+          lots: [],
+          oversoldQty: 0,
+        };
+        positions.set(key, pos);
+      }
       pos.oversoldQty += consumeFifoLots(pos.lots, t.quantity);
     }
   }
@@ -324,8 +339,12 @@ export function computeRealizedPnl(trades: Trade[]): RealizedPnl {
       }
       queues.get(key)!.lots.push({ qty: t.quantity, price: t.price });
     } else {
-      const queue = queues.get(key);
-      if (!queue) continue;
+      let queue = queues.get(key);
+      if (!queue) {
+        // 매수 이력이 전혀 없는 상태에서 매도가 들어온 경우도 oversold로 표시해야 한다.
+        queue = { lots: [], currency: t.currency };
+        queues.set(key, queue);
+      }
       let realized = 0;
       const leftover = consumeFifoLots(queue.lots, t.quantity, (lot, used) => {
         realized += (t.price - lot.price) * used;
