@@ -2,6 +2,7 @@ export interface TradeItem {
   id?: string;
   type: "BUY" | "SELL";
   currency: "KRW" | "USD";
+  market: "KR" | "US";
   stockName: string;
   stockCode: string;
   quantity: number;

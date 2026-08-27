@@ -90,6 +90,7 @@ export const useTradesStore = defineStore('trades', () => {
         id: trade.id,
         type: trade.type,
         currency: trade.currency,
+        market: trade.market,
         stockName: trade.stockName,
         stockCode: trade.stockCode,
         quantity: trade.quantity,
