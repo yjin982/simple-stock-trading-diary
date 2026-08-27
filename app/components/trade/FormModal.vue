@@ -166,19 +166,34 @@ const selectedAccountCurrency = computed(() => {
   return acc?.currency ?? null
 })
 
+// sortTradesAsc(거래일 → 순서 → 생성시각)와 동일한 기준으로 "target보다 앞선 거래"인지 판단한다.
+// targetCreatedAt이 없으면(신규 추가) 아직 생성되지 않은 거래이므로, 같은 (거래일,순서)의
+// 기존 거래는 전부 그보다 앞선 것으로 취급한다 — 신규 거래는 저장 시 항상 더 나중 생성시각을 갖기 때문.
+function isBeforeTarget(
+  t: Trade,
+  targetDate: string,
+  targetSequence: number,
+  targetCreatedAt: string | null,
+): boolean {
+  if (t.tradeDate !== targetDate) return t.tradeDate < targetDate
+  if (t.sequence !== targetSequence) return t.sequence < targetSequence
+  if (targetCreatedAt == null) return true
+  return t.createdAt < targetCreatedAt
+}
+
 // 매도 시 선택 가능한 보유 종목 목록.
-// 수정 중인 거래 자신은 제외하고, "이 거래가 저장될 시점"(거래일·순서) 이전/동시의
+// 수정 중인 거래 자신은 제외하고, "이 거래가 저장될 시점"(거래일·순서·생성시각) 이전의
 // 거래만으로 FIFO를 계산해 실제 그 시점에 보유했던 수량을 기준으로 판단한다.
 const accountHoldings = computed(() => {
   if (form.type !== 'SELL' || !form.accountId) return []
 
   const targetDate = form.date
   const targetSequence = Number(form.sequence) || 0
+  const targetCreatedAt = props.editTrade?.createdAt ?? null
 
   const trades = tradesStore.items.filter((t) => {
     if (props.editTrade && t.id === props.editTrade.id) return false
-    if (t.tradeDate !== targetDate) return t.tradeDate < targetDate
-    return t.sequence <= targetSequence
+    return isBeforeTarget(t, targetDate, targetSequence, targetCreatedAt)
   })
 
   const positions = buildFifoPositions(trades)
