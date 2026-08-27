@@ -152,6 +152,20 @@ export const useTradesStore = defineStore('trades', () => {
 
   async function update(id: string, payload: TradePayload): Promise<Trade | null> {
     error.value = null
+
+    // 매수 거래를 수정해 물량·시점이 바뀌면, 그 물량에 의존하던 다른(이후) 매도가
+    // 새로 초과매도가 될 수 있다. 원래 매수였던 거래에 한해 저장 전 미리 확인한다.
+    const target = items.value.find(t => t.id === id)
+    if (target?.type === 'BUY') {
+      const candidate = items.value.map(t =>
+        t.id === id ? { ...t, ...payload, sequence: payload.sequence ?? 0 } : t,
+      )
+      if (wouldIntroduceOversell(items.value, candidate)) {
+        error.value = '이 매수 내용을 수정하면 이후 매도 내역이 보유수량을 초과하게 됩니다. 관련 매도 내역을 먼저 확인해주세요.'
+        return null
+      }
+    }
+
     loading.value = true
     try {
       const { data, error: err } = await client
@@ -174,6 +188,18 @@ export const useTradesStore = defineStore('trades', () => {
 
   async function remove(id: string) {
     error.value = null
+
+    // 매수 거래를 삭제해 물량이 사라지면, 그 물량에 의존하던 다른(이후) 매도가
+    // 새로 초과매도가 될 수 있다. 매수 거래 삭제에 한해 저장 전 미리 확인한다.
+    const target = items.value.find(t => t.id === id)
+    if (target?.type === 'BUY') {
+      const candidate = items.value.filter(t => t.id !== id)
+      if (wouldIntroduceOversell(items.value, candidate)) {
+        error.value = '이 매수를 삭제하면 이후 매도 내역이 보유수량을 초과하게 됩니다. 관련 매도 내역을 먼저 확인해주세요.'
+        return
+      }
+    }
+
     loading.value = true
     try {
       const { error: err } = await client

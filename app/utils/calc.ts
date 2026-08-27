@@ -97,6 +97,21 @@ export function buildFifoPositions(trades: Trade[]): Map<string, FifoPosition> {
   return positions;
 }
 
+// 매수 거래 수정·삭제가 이후 매도 내역을 초과매도로 만드는지 확인.
+// (매도 거래 자체는 이미 저장 시점에 그 시점 잔고로 검증되므로, 여기서는
+// 매수 물량이 줄거나 시점이 밀려서 "다른" 거래가 새로 초과매도가 되는
+// 경우만 신경 쓰면 된다.) before/after 각각 전체 FIFO를 계산해, 특정
+// 포지션의 오버매도 수량이 이전보다 늘어났으면 이번 변경이 원인인 것이다.
+export function wouldIntroduceOversell(before: Trade[], after: Trade[]): boolean {
+  const beforePositions = buildFifoPositions(before);
+  const afterPositions = buildFifoPositions(after);
+  for (const [key, pos] of afterPositions) {
+    const prevOversoldQty = beforePositions.get(key)?.oversoldQty ?? 0;
+    if (pos.oversoldQty > prevOversoldQty) return true;
+  }
+  return false;
+}
+
 // 주식 잔고 수량 계산
 export function lotsQty(lots: Lot[]): number {
   return lots.reduce((s, l) => s + l.qty, 0);
