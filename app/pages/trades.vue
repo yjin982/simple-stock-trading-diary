@@ -12,6 +12,13 @@
       </button>
     </div>
 
+    <p
+      v-if="tradesStore.error"
+      class="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+    >
+      {{ tradesStore.error }}
+    </p>
+
     <!-- 메인 탭 -->
     <div class="flex border-b">
       <button

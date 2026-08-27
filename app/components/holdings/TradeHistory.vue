@@ -1,5 +1,11 @@
 <template>
   <div>
+    <p
+      v-if="tradesStore.error"
+      class="mx-5 mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+    >
+      {{ tradesStore.error }}
+    </p>
     <template
       v-for="(group, groupIdx) in displayedAccountGroups"
       :key="group.accountId"
@@ -268,13 +274,13 @@ const emit = defineEmits<{
 }>();
 
 const deletingId = ref<string | null>(null);
+const tradesStore = useTradesStore();
 
 function confirmDelete(id: string) {
+  tradesStore.clearError();
   emit("delete-trade", id);
   deletingId.value = null;
 }
-
-const tradesStore = useTradesStore();
 
 const { krwEquiv: baseKrwEquiv } = useExchangeRate()
 const isUSD = computed(() => props.currency === 'USD')
