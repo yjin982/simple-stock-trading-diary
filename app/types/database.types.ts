@@ -17,6 +17,7 @@ export interface Database {
           price: number
           quantity: number
           trade_date: string
+          sequence: number
           memo: string | null
           created_at: string
         }
@@ -33,6 +34,7 @@ export interface Database {
           price: number
           quantity: number
           trade_date: string
+          sequence?: number
           memo?: string | null
           created_at?: string
         }
@@ -49,6 +51,7 @@ export interface Database {
           price?: number
           quantity?: number
           trade_date?: string
+          sequence?: number
           memo?: string | null
           created_at?: string
         }
