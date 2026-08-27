@@ -22,3 +22,7 @@ logs
 .env
 .env.*
 !.env.example
+
+# 내부 작업 문서 (Claude/Codex용 로컬 메모)
+.claude/code-review.md
+AGENTS.md
