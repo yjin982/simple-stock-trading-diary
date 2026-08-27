@@ -110,10 +110,10 @@
             </tr>
           </thead>
           <tbody>
-            <template v-for="group in sortedGroups" :key="group.stockCode">
+            <template v-for="group in sortedGroups" :key="stockKey(group.market, group.stockCode)">
               <tr
                 v-for="(h, i) in group.rows"
-                :key="`${h.stockCode}-${h.accountId}`"
+                :key="`${stockKey(h.market, h.stockCode)}-${h.accountId}`"
                 class="transition-colors hover:bg-muted/30"
                 :class="
                   i < group.rows.length - 1

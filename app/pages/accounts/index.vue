@@ -15,8 +15,13 @@
       <UiPriceDelayNotice :time="priceTime" />
     </div>
 
-    <!-- 로딩 -->
-    <div v-if="accountsStore.loading" class="flex justify-center py-16">
+    <!-- 로딩: 계좌 add/update/remove 중에도 loading이 true가 되므로,
+         이미 목록이 있는 상태에서 저장 작업을 할 때는 전체 목록을 스피너로
+         가리지 않도록 최초 조회(목록이 비어 있을 때)에만 표시한다. -->
+    <div
+      v-if="accountsStore.loading && accountsStore.items.length === 0"
+      class="flex justify-center py-16"
+    >
       <Loader2 class="h-6 w-6 animate-spin text-muted-foreground" />
     </div>
 

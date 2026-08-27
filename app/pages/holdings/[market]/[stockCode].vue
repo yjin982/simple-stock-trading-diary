@@ -195,7 +195,9 @@ const settingsSaved = ref(false);
 
 const isTargetReached = computed(() => {
   if (!settingsForm.targetRate) return false;
-  return holdings.value.some((h) => h.pnlRate >= Number(settingsForm.targetRate));
+  return holdings.value.some(
+    (h) => h.priceAvailable && h.pnlRate >= Number(settingsForm.targetRate),
+  );
 });
 
 watch(

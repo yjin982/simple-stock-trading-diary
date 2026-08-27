@@ -10,6 +10,12 @@
     >
       일부 종목에서 보유수량을 초과하는 매도 이력이 발견되어 실현손익 계산이 정확하지 않을 수 있습니다. 매매내역을 확인해주세요.
     </p>
+    <p
+      v-if="summary.hasEstimatedPrice"
+      class="mb-3 rounded-md border border-muted-foreground/30 bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+    >
+      일부 종목의 현재가를 조회하지 못해 평균단가로 대체한 추정값이 아래 합계에 포함되어 있습니다.
+    </p>
 
     <!-- 합산 요약 카드 -->
     <div

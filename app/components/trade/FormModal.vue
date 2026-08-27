@@ -188,7 +188,7 @@ const accountHoldings = computed(() => {
   if (form.type !== 'SELL' || !form.accountId) return []
 
   const targetDate = form.date
-  const targetSequence = Number(form.sequence) || 0
+  const targetSequence = Math.max(0, Number(form.sequence) || 0)
   const targetCreatedAt = props.editTrade?.createdAt ?? null
 
   const trades = tradesStore.items.filter((t) => {
@@ -395,7 +395,7 @@ async function handleSubmit() {
     price: Number(form.price),
     quantity: Number(form.quantity),
     tradeDate: form.date,
-    sequence: Number(form.sequence) || 0,
+    sequence: Math.max(0, Number(form.sequence) || 0),
     memo: form.memo || undefined,
   }
 

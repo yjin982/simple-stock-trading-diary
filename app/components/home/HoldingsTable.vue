@@ -18,10 +18,10 @@
           </tr>
         </thead>
         <tbody>
-          <template v-for="group in holdingGroups" :key="group.stockCode">
+          <template v-for="group in holdingGroups" :key="stockKey(group.market, group.stockCode)">
             <tr
               v-for="(h, i) in group.rows"
-              :key="`${h.stockCode}-${h.accountId}`"
+              :key="`${stockKey(h.market, h.stockCode)}-${h.accountId}`"
               :class="i < group.rows.length - 1 ? 'border-b border-dashed border-muted' : 'border-b last:border-0'"
             >
               <!-- 종목: 첫 행만 rowspan -->
