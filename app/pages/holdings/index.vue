@@ -178,44 +178,53 @@
                   :rowspan="group.rows.length"
                   class="px-4 py-3 text-right align-middle"
                 >
-                  <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
-                  <div
-                    v-if="h.currency === 'USD'"
-                    class="text-xs text-muted-foreground"
-                  >
-                    {{ krwEquiv(h.currentPrice) }}
-                  </div>
+                  <template v-if="h.priceAvailable">
+                    <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
+                    <div
+                      v-if="h.currency === 'USD'"
+                      class="text-xs text-muted-foreground"
+                    >
+                      {{ krwEquiv(h.currentPrice) }}
+                    </div>
+                  </template>
+                  <span v-else class="text-xs text-muted-foreground" title="가격 조회 실패">—</span>
                 </td>
                 <!-- 평가금액 -->
                 <td class="hidden px-4 py-3 text-right md:table-cell">
-                  <div>
-                    {{ fmtCurrency(h.currentPrice * h.quantity, h.currency) }}
-                  </div>
-                  <div
-                    v-if="h.currency === 'USD'"
-                    class="text-xs text-muted-foreground"
-                  >
-                    {{ krwEquiv(h.currentPrice * h.quantity) }}
-                  </div>
+                  <template v-if="h.priceAvailable">
+                    <div>
+                      {{ fmtCurrency(h.currentPrice * h.quantity, h.currency) }}
+                    </div>
+                    <div
+                      v-if="h.currency === 'USD'"
+                      class="text-xs text-muted-foreground"
+                    >
+                      {{ krwEquiv(h.currentPrice * h.quantity) }}
+                    </div>
+                  </template>
+                  <span v-else class="text-xs text-muted-foreground">—</span>
                 </td>
                 <!-- 평가손익 -->
                 <td class="px-4 py-3 font-medium text-right">
-                  <div :class="pnlColor(h.pnl)">
-                    {{ fmtPnl(h.pnl, h.currency) }}
-                  </div>
-                  <div
-                    v-if="h.currency === 'USD'"
-                    class="text-xs text-muted-foreground"
-                  >
-                    {{ krwEquiv(h.pnl) }}
-                  </div>
+                  <template v-if="h.priceAvailable">
+                    <div :class="pnlColor(h.pnl)">
+                      {{ fmtPnl(h.pnl, h.currency) }}
+                    </div>
+                    <div
+                      v-if="h.currency === 'USD'"
+                      class="text-xs text-muted-foreground"
+                    >
+                      {{ krwEquiv(h.pnl) }}
+                    </div>
+                  </template>
+                  <span v-else class="text-xs text-muted-foreground">—</span>
                 </td>
                 <!-- 수익률 -->
                 <td
                   class="px-4 py-3 font-medium text-right"
-                  :class="pnlColor(h.pnlRate)"
+                  :class="h.priceAvailable ? pnlColor(h.pnlRate) : ''"
                 >
-                  <div class="flex items-center justify-end gap-1">
+                  <div v-if="h.priceAvailable" class="flex items-center justify-end gap-1">
                     <span
                       v-if="i === 0 && isTargetReached(h)"
                       title="목표 수익률 달성"
@@ -224,6 +233,7 @@
                     >
                     {{ fmtPnlRate(h.pnlRate) }}
                   </div>
+                  <span v-else class="text-xs text-muted-foreground" title="가격 조회 실패">가격 조회 실패</span>
                 </td>
               </tr>
             </template>

@@ -48,17 +48,23 @@
               </td>
               <!-- 현재가: 그룹 첫 행만 rowspan -->
               <td v-if="i === 0" :rowspan="group.rows.length" class="py-3 text-right align-middle">
-                <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
-                <div v-if="h.currency === 'USD'" class="text-xs text-muted-foreground">{{ krwEquiv(h.currentPrice) }}</div>
+                <template v-if="h.priceAvailable">
+                  <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
+                  <div v-if="h.currency === 'USD'" class="text-xs text-muted-foreground">{{ krwEquiv(h.currentPrice) }}</div>
+                </template>
+                <span v-else class="text-xs text-muted-foreground" title="가격 조회 실패">—</span>
               </td>
               <!-- 평가손익 -->
-              <td class="py-3 text-right font-medium" :class="pnlColor(h.pnl)">
-                <div>{{ fmtPnl(h.pnl, h.currency) }}</div>
-                <div v-if="h.currency === 'USD'" class="text-xs">{{ krwEquiv(h.pnl) }}</div>
+              <td class="py-3 text-right font-medium" :class="h.priceAvailable ? pnlColor(h.pnl) : ''">
+                <template v-if="h.priceAvailable">
+                  <div>{{ fmtPnl(h.pnl, h.currency) }}</div>
+                  <div v-if="h.currency === 'USD'" class="text-xs">{{ krwEquiv(h.pnl) }}</div>
+                </template>
+                <span v-else class="text-xs text-muted-foreground">—</span>
               </td>
               <!-- 손익률 -->
-              <td class="hidden py-3 text-right md:table-cell" :class="pnlColor(h.pnlRate)">
-                {{ fmtPnlRate(h.pnlRate) }}
+              <td class="hidden py-3 text-right md:table-cell" :class="h.priceAvailable ? pnlColor(h.pnlRate) : ''">
+                {{ h.priceAvailable ? fmtPnlRate(h.pnlRate) : '가격 조회 실패' }}
               </td>
             </tr>
           </template>

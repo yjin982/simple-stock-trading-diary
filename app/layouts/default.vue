@@ -59,6 +59,12 @@
       </aside>
     </Transition>
 
+    <!-- 데이터 로딩 표시줄 -->
+    <div
+      v-if="isLoading"
+      class="fixed left-0 top-0 z-50 h-0.5 w-full animate-pulse bg-primary"
+    />
+
     <!-- 상단바 -->
     <header class="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div class="mx-auto flex h-14 max-w-screen-xl items-center gap-4 px-4 sm:px-6">
@@ -116,6 +122,19 @@
       </div>
     </header>
 
+    <!-- 데이터 조회 오류 -->
+    <div v-if="loadError" class="mx-auto max-w-screen-xl px-4 pt-4 sm:px-6">
+      <div class="flex items-center justify-between gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <span>{{ loadError }}</span>
+        <button
+          class="shrink-0 rounded-md border border-destructive/40 px-2.5 py-1 text-xs font-medium transition-colors hover:bg-destructive/10"
+          @click="retryFetch"
+        >
+          다시 시도
+        </button>
+      </div>
+    </div>
+
     <!-- 페이지 콘텐츠 -->
     <main class="mx-auto max-w-screen-xl px-4 py-6 sm:px-6">
       <slot />
@@ -143,6 +162,14 @@ watch(user, (u) => {
     accountsStore.fetchAll()
   }
 }, { immediate: true })
+
+const isLoading = computed(() => tradesStore.loading || accountsStore.loading)
+const loadError = computed(() => tradesStore.error || accountsStore.error)
+
+function retryFetch() {
+  tradesStore.fetchAll()
+  accountsStore.fetchAll()
+}
 
 async function logout() {
   await client.auth.signOut()

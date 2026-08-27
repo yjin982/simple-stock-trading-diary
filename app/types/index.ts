@@ -44,6 +44,7 @@ export interface Holding {
   currentPrice: number;
   pnl: number;
   pnlRate: number;
+  priceAvailable: boolean;
 }
 
 export interface Stock {

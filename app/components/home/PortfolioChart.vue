@@ -10,7 +10,7 @@
       <div>
         <div class="mb-3 text-center md:text-left">
           <p class="text-xs font-medium">시장별 비중</p>
-          <p class="text-[11px] text-muted-foreground">종목 수 기준</p>
+          <p class="text-[11px] text-muted-foreground">평가금액 기준</p>
         </div>
 
         <div
@@ -22,7 +22,7 @@
             <div
               class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
             >
-              <span class="text-base font-bold">{{ holdings.length }}</span>
+              <span class="text-base font-bold">{{ aggregatedHoldings.length }}</span>
               <span class="text-[11px] text-muted-foreground">종목</span>
             </div>
           </div>
@@ -142,28 +142,66 @@ function toggleMarket(market: "KR" | "US") {
   selectedMarket.value = selectedMarket.value === market ? null : market;
 }
 
-// --- Chart 1: 국내/해외 ---
+const { usdKrw } = useExchangeRate();
+function toKRW(currency: "KRW" | "USD", amount: number): number {
+  return currency === "USD" ? amount * (usdKrw.value ?? 0) : amount;
+}
+
+// 같은 종목(market+stockCode)을 여러 계좌에 나눠 보유해도 하나로 합산해
+// "종목 수"·비중 계산이 계좌 수만큼 중복 집계되지 않게 한다.
+const aggregatedHoldings = computed(() => {
+  const map = new Map<
+    string,
+    {
+      stockCode: string;
+      stockName: string;
+      market: "KR" | "US";
+      currency: "KRW" | "USD";
+      evalAmountKRW: number;
+    }
+  >();
+  for (const h of props.holdings) {
+    const key = stockKey(h.market, h.stockCode);
+    if (!map.has(key)) {
+      map.set(key, {
+        stockCode: h.stockCode,
+        stockName: h.stockName,
+        market: h.market,
+        currency: h.currency,
+        evalAmountKRW: 0,
+      });
+    }
+    map.get(key)!.evalAmountKRW += toKRW(h.currency, h.currentPrice * h.quantity);
+  }
+  return [...map.values()];
+});
+
+// --- Chart 1: 국내/해외 (평가금액 기준) ---
 
 const marketLegend = computed(() => {
-  const kr = props.holdings.filter((h) => h.market === "KR").length;
-  const us = props.holdings.filter((h) => h.market === "US").length;
-  const total = kr + us;
+  const kr = aggregatedHoldings.value.filter((h) => h.market === "KR");
+  const us = aggregatedHoldings.value.filter((h) => h.market === "US");
+  const krAmount = kr.reduce((s, h) => s + h.evalAmountKRW, 0);
+  const usAmount = us.reduce((s, h) => s + h.evalAmountKRW, 0);
+  const total = krAmount + usAmount;
   if (total === 0) return [];
   const result = [];
-  if (kr > 0)
+  if (kr.length > 0)
     result.push({
       market: "KR" as const,
       label: "국내",
-      count: kr,
-      pct: ((kr / total) * 100).toFixed(0),
+      count: kr.length,
+      amount: krAmount,
+      pct: ((krAmount / total) * 100).toFixed(0),
       color: MARKET_COLORS.KR,
     });
-  if (us > 0)
+  if (us.length > 0)
     result.push({
       market: "US" as const,
       label: "해외",
-      count: us,
-      pct: ((us / total) * 100).toFixed(0),
+      count: us.length,
+      amount: usAmount,
+      pct: ((usAmount / total) * 100).toFixed(0),
       color: MARKET_COLORS.US,
     });
   return result;
@@ -173,7 +211,7 @@ const marketChartData = computed<ChartData<"doughnut">>(() => ({
   labels: marketLegend.value.map((d) => d.label),
   datasets: [
     {
-      data: marketLegend.value.map((d) => d.count),
+      data: marketLegend.value.map((d) => d.amount),
       backgroundColor: marketLegend.value.map((d) =>
         !selectedMarket.value || selectedMarket.value === d.market
           ? d.color
@@ -203,7 +241,8 @@ const marketChartOptions: ChartOptions<"doughnut"> = {
             0,
           );
           const pct = (((ctx.raw as number) / total) * 100).toFixed(0);
-          return ` ${ctx.label}: ${ctx.raw}종목 (${pct}%)`;
+          const d = marketLegend.value.find((m) => m.label === ctx.label);
+          return ` ${ctx.label}: ${d?.count ?? 0}종목 (${pct}%)`;
         },
       },
     },
@@ -220,15 +259,14 @@ const marketChartOptions: ChartOptions<"doughnut"> = {
 
 const stockItems = computed(() => {
   const filtered = selectedMarket.value
-    ? props.holdings.filter((h) => h.market === selectedMarket.value)
-    : props.holdings;
+    ? aggregatedHoldings.value.filter((h) => h.market === selectedMarket.value)
+    : aggregatedHoldings.value;
   if (filtered.length === 0) return [];
 
-  const byEval = !!selectedMarket.value;
   const withValue = filtered.map((h) => ({
     stockCode: h.stockCode,
     stockName: h.stockName,
-    value: byEval ? h.currentPrice * h.quantity : 1,
+    value: h.evalAmountKRW,
   }));
 
   const sorted = [...withValue].sort((a, b) => b.value - a.value);
@@ -284,7 +322,5 @@ const stockChartTitle = computed(() => {
   return "전체 종목별 비중";
 });
 
-const stockChartBasis = computed(() =>
-  selectedMarket.value ? "평가금액 기준" : "종목 수 기준",
-);
+const stockChartBasis = "평가금액 기준";
 </script>

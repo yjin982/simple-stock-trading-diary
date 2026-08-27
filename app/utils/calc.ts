@@ -118,6 +118,7 @@ export type PositionHolding = {
   pnl: number;
   pnlRate: number;
   oversoldQty: number;
+  priceAvailable: boolean;
 };
 
 // FIFO 포지션 목록 → 종목별 평가금액/손익 계산 (보유수량 0인 포지션은 제외)
@@ -132,6 +133,9 @@ export function computeHoldingsFromPositions(
     const totalCost = lotsCost(pos.lots);
     const avgPrice = totalCost / quantity;
     const sym = toYahooSymbol(pos.stockCode, pos.market, pos.exchange);
+    // 현재가 조회 실패 시에도 합계 계산이 깨지지 않도록 평균단가를 임시값으로 쓰되,
+    // priceAvailable로 실제 조회 여부를 구분해 UI가 정상 현재가처럼 보여주지 않게 한다.
+    const priceAvailable = priceMap[sym] != null;
     const currentPrice = priceMap[sym] ?? avgPrice;
     const evalAmount = currentPrice * quantity;
     const pnl = calcPnl(evalAmount, totalCost);
@@ -149,6 +153,7 @@ export function computeHoldingsFromPositions(
       currentPrice,
       evalAmount,
       pnl,
+      priceAvailable,
       pnlRate: calcPnlRate(pnl, totalCost),
       oversoldQty: pos.oversoldQty,
     });

@@ -14,27 +14,27 @@
     <UiCard
       :compact="compact"
       title="현재가"
-      :value="fmtCurrency(data.currentPrice, data.currency)"
-      :sub-value="krwEquiv(data.currentPrice)"
+      :value="priceAvailable ? fmtCurrency(data.currentPrice, data.currency) : '—'"
+      :sub-value="priceAvailable ? krwEquiv(data.currentPrice) : '가격 조회 실패'"
     />
     <UiCard
       :compact="compact"
       :title="isAggregate ? '총 평가금액' : '평가금액'"
-      :value="fmtCurrency(data.currentPrice * data.quantity, data.currency)"
-      :sub-value="krwEquiv(data.currentPrice * data.quantity)"
+      :value="priceAvailable ? fmtCurrency(data.currentPrice * data.quantity, data.currency) : '—'"
+      :sub-value="priceAvailable ? krwEquiv(data.currentPrice * data.quantity) : undefined"
     />
     <UiCard
       :compact="compact"
       :title="isAggregate ? '총 평가손익' : '평가손익'"
-      :value="fmtPnl(data.pnl, data.currency)"
-      :sub-value="krwEquiv(data.pnl)"
-      :trend="pnlTrend(data.pnl)"
+      :value="priceAvailable ? fmtPnl(data.pnl, data.currency) : '—'"
+      :sub-value="priceAvailable ? krwEquiv(data.pnl) : undefined"
+      :trend="priceAvailable ? pnlTrend(data.pnl) : 'neutral'"
     />
     <UiCard
       :compact="compact"
       title="수익률"
-      :value="fmtPnlRate(data.pnlRate)"
-      :trend="pnlTrend(data.pnlRate)"
+      :value="priceAvailable ? fmtPnlRate(data.pnlRate) : '—'"
+      :trend="priceAvailable ? pnlTrend(data.pnlRate) : 'neutral'"
     />
   </div>
 </template>
@@ -48,6 +48,7 @@ const props = defineProps<{
     avgPrice: number
     pnl: number
     pnlRate: number
+    priceAvailable?: boolean
   }
   compact?: boolean
   isAggregate?: boolean
@@ -56,4 +57,5 @@ const props = defineProps<{
 const { krwEquiv: baseKrwEquiv } = useExchangeRate()
 const isUSD = computed(() => props.data.currency === 'USD')
 const krwEquiv = (usd: number) => isUSD.value ? (baseKrwEquiv(usd) ?? undefined) : undefined
+const priceAvailable = computed(() => props.data.priceAvailable ?? true)
 </script>

@@ -227,35 +227,44 @@
                 </div>
               </td>
               <td class="hidden px-5 py-2.5 align-top text-right sm:table-cell">
-                <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
-                <div
-                  v-if="h.currency === 'USD'"
-                  class="text-xs text-muted-foreground"
-                >
-                  {{ krwEquiv(h.currentPrice) }}
-                </div>
+                <template v-if="h.priceAvailable">
+                  <div>{{ fmtCurrency(h.currentPrice, h.currency) }}</div>
+                  <div
+                    v-if="h.currency === 'USD'"
+                    class="text-xs text-muted-foreground"
+                  >
+                    {{ krwEquiv(h.currentPrice) }}
+                  </div>
+                </template>
+                <span v-else class="text-xs text-muted-foreground" title="가격 조회 실패">—</span>
               </td>
               <td class="px-5 py-2.5 align-top text-right font-medium">
-                <div>{{ fmtCurrency(h.evalAmount, h.currency) }}</div>
-                <div
-                  v-if="h.currency === 'USD'"
-                  class="text-xs font-normal text-muted-foreground"
-                >
-                  {{ krwEquiv(h.evalAmount) }}
-                </div>
+                <template v-if="h.priceAvailable">
+                  <div>{{ fmtCurrency(h.evalAmount, h.currency) }}</div>
+                  <div
+                    v-if="h.currency === 'USD'"
+                    class="text-xs font-normal text-muted-foreground"
+                  >
+                    {{ krwEquiv(h.evalAmount) }}
+                  </div>
+                </template>
+                <span v-else class="text-xs text-muted-foreground">—</span>
               </td>
               <td
                 class="px-5 py-2.5 align-top text-right"
-                :class="pnlColor(h.pnl)"
+                :class="h.priceAvailable ? pnlColor(h.pnl) : ''"
               >
-                <div class="font-medium">{{ fmtPnl(h.pnl, h.currency) }}</div>
-                <div class="text-xs">{{ fmtPnlRate(h.pnlRate) }}</div>
-                <div
-                  v-if="h.currency === 'USD'"
-                  class="text-xs text-muted-foreground"
-                >
-                  {{ krwEquiv(h.pnl) }}
-                </div>
+                <template v-if="h.priceAvailable">
+                  <div class="font-medium">{{ fmtPnl(h.pnl, h.currency) }}</div>
+                  <div class="text-xs">{{ fmtPnlRate(h.pnlRate) }}</div>
+                  <div
+                    v-if="h.currency === 'USD'"
+                    class="text-xs text-muted-foreground"
+                  >
+                    {{ krwEquiv(h.pnl) }}
+                  </div>
+                </template>
+                <span v-else class="text-xs text-muted-foreground">가격 조회 실패</span>
               </td>
             </tr>
           </tbody>

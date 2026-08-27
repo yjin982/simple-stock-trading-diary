@@ -174,6 +174,7 @@ const aggregated = computed(() => {
     avgPrice: totalQty > 0 ? totalCost / totalQty : 0,
     pnl: totalPnl,
     pnlRate: totalCost > 0 ? (totalPnl / totalCost) * 100 : 0,
+    priceAvailable: hs.every((h) => h.priceAvailable),
   };
 });
 
