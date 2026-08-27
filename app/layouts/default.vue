@@ -156,19 +156,26 @@ const sidebarOpen = ref(false)
 
 const tradesStore = useTradesStore()
 const accountsStore = useAccountsStore()
+
+// trades/accounts 스토어의 loading·error는 저장/삭제 같은 개별 작업에도 쓰이므로,
+// 전역 배너는 최초 목록 조회 결과만 별도로 추적해 저장 실패 등과 뒤섞이지 않게 한다.
+const isLoading = ref(false)
+const loadError = ref<string | null>(null)
+
+async function loadInitialData() {
+  isLoading.value = true
+  loadError.value = null
+  await Promise.all([tradesStore.fetchAll(), accountsStore.fetchAll()])
+  isLoading.value = false
+  loadError.value = tradesStore.error || accountsStore.error
+}
+
 watch(user, (u) => {
-  if (u) {
-    tradesStore.fetchAll()
-    accountsStore.fetchAll()
-  }
+  if (u) loadInitialData()
 }, { immediate: true })
 
-const isLoading = computed(() => tradesStore.loading || accountsStore.loading)
-const loadError = computed(() => tradesStore.error || accountsStore.error)
-
 function retryFetch() {
-  tradesStore.fetchAll()
-  accountsStore.fetchAll()
+  loadInitialData()
 }
 
 async function logout() {
