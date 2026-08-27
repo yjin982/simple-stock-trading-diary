@@ -26,6 +26,7 @@ export interface Trade {
   price: number;
   quantity: number;
   tradeDate: string;
+  sequence: number;
   memo?: string;
   createdAt: string;
   accountName?: string;
@@ -79,6 +80,7 @@ export interface TradeRow {
   holdingRange?: string;
   pnlRate?: number;
   realizedPnl?: number;
+  oversold?: boolean;
 }
 
 export type QuotePriceMap = Record<

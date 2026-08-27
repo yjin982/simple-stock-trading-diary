@@ -13,6 +13,7 @@ type Summary = {
   returnRateUSD: number;
   hasKRW: boolean;
   hasUSD: boolean;
+  hasDataIssue: boolean;
 };
 
 export function useSummary(
@@ -28,7 +29,7 @@ export function useSummary(
       })),
     );
 
-    const { KRW: realizedKRW, USD: realizedUSD } = computeRealizedPnl(
+    const { KRW: realizedKRW, USD: realizedUSD, oversold } = computeRealizedPnl(
       trades.value,
     );
 
@@ -41,6 +42,7 @@ export function useSummary(
       realizedUSD,
       hasKRW,
       hasUSD,
+      hasDataIssue: oversold,
     };
   });
 }

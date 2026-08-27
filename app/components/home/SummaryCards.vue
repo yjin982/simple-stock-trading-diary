@@ -4,6 +4,13 @@
       <h1 class="text-base font-semibold">포트폴리오 요약</h1>
     </div>
 
+    <p
+      v-if="summary.hasDataIssue"
+      class="mb-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+    >
+      일부 종목에서 보유수량을 초과하는 매도 이력이 발견되어 실현손익 계산이 정확하지 않을 수 있습니다. 매매내역을 확인해주세요.
+    </p>
+
     <!-- 합산 요약 카드 -->
     <div
       class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"

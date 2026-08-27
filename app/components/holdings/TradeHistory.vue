@@ -90,6 +90,13 @@
                   >
                     {{ row.type === "BUY" ? "매수" : "매도" }}
                   </span>
+                  <span
+                    v-if="row.oversold"
+                    class="ml-1 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive"
+                    title="보유수량을 초과하는 매도로 실현손익이 정확하지 않을 수 있습니다."
+                  >
+                    잔고초과
+                  </span>
                 </td>
                 <td class="px-2 py-2.5 align-center">
                   <div v-if="row.memo" class="relative group">

@@ -13,18 +13,25 @@ export type FifoPosition = {
   exchange?: "KOSPI" | "KOSDAQ";
   currency: "KRW" | "USD";
   lots: Lot[];
+  oversoldQty: number; // 보유 잔고보다 많이 매도되어 매칭하지 못한 누적 수량
 };
 
 export function sortTradesAsc(trades: Trade[]): Trade[] {
-  return [...trades].sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
+  return [...trades].sort(
+    (a, b) =>
+      a.tradeDate.localeCompare(b.tradeDate) ||
+      (a.sequence ?? 0) - (b.sequence ?? 0) ||
+      a.createdAt.localeCompare(b.createdAt),
+  );
 }
 
 // FIFO 방식으로 lots 앞에서부터 sellQty만큼 소진. 소진되는 lot마다 onConsume 호출.
+// 반환값: 잔고 부족으로 소진하지 못하고 남은 수량 (정상 매도라면 0).
 function consumeFifoLots(
   lots: Lot[],
   sellQty: number,
   onConsume?: (lot: Lot, usedQty: number) => void,
-): void {
+): number {
   let remaining = sellQty;
   while (remaining > 0 && lots.length > 0) {
     const lot = lots[0]!;
@@ -34,6 +41,7 @@ function consumeFifoLots(
     remaining -= used;
     if (lot.qty === 0) lots.shift();
   }
+  return remaining;
 }
 
 // 거래 목록에서 FIFO 방식으로 잔여 포지션 맵을 생성 (키: accountId|stockCode)
@@ -57,6 +65,7 @@ export function buildFifoPositions(trades: Trade[]): Map<string, FifoPosition> {
           exchange: t.exchange,
           currency: t.currency,
           lots: [],
+          oversoldQty: 0,
         });
       }
       // 매수 이력이 있음.
@@ -65,7 +74,7 @@ export function buildFifoPositions(trades: Trade[]): Map<string, FifoPosition> {
       // 매도
       const pos = positions.get(key);
       if (!pos) continue; // 매도할 내역이 없음.
-      consumeFifoLots(pos.lots, t.quantity);
+      pos.oversoldQty += consumeFifoLots(pos.lots, t.quantity);
     }
   }
 
@@ -107,6 +116,7 @@ export type PositionHolding = {
   evalAmount: number;
   pnl: number;
   pnlRate: number;
+  oversoldQty: number;
 };
 
 // FIFO 포지션 목록 → 종목별 평가금액/손익 계산 (보유수량 0인 포지션은 제외)
@@ -139,6 +149,7 @@ export function computeHoldingsFromPositions(
       evalAmount,
       pnl,
       pnlRate: calcPnlRate(pnl, totalCost),
+      oversoldQty: pos.oversoldQty,
     });
   }
   return result;
@@ -268,6 +279,9 @@ export function buildTradeRows(trades: Trade[]): TradeRow[] {
         pnlRate = calcRealizedPnlRate(realizedPnl, avgBuyPrice, totalQty);
       }
 
+      // 매수 잔고보다 많이 매도해 일부(또는 전부) 수량을 매칭하지 못한 경우
+      const oversold = sellQty > 0;
+
       result.push({
         id: trade.id,
         date: trade.tradeDate,
@@ -280,6 +294,7 @@ export function buildTradeRows(trades: Trade[]): TradeRow[] {
         holdingRange,
         pnlRate,
         realizedPnl,
+        oversold,
       });
     }
   }
@@ -287,13 +302,13 @@ export function buildTradeRows(trades: Trade[]): TradeRow[] {
   return result.reverse();
 }
 
-export type RealizedPnl = { KRW: number; USD: number };
+export type RealizedPnl = { KRW: number; USD: number; oversold: boolean };
 
 // 전체 거래 내역에서 FIFO 방식으로 실현손익을 통화별로 계산
 export function computeRealizedPnl(trades: Trade[]): RealizedPnl {
   const sorted = sortTradesAsc(trades);
   const queues = new Map<string, { lots: Lot[]; currency: "KRW" | "USD" }>();
-  const result: RealizedPnl = { KRW: 0, USD: 0 };
+  const result: RealizedPnl = { KRW: 0, USD: 0, oversold: false };
 
   for (const t of sorted) {
     const key = `${t.accountId}|${t.stockCode}`;
@@ -306,9 +321,13 @@ export function computeRealizedPnl(trades: Trade[]): RealizedPnl {
       const queue = queues.get(key);
       if (!queue) continue;
       let realized = 0;
-      consumeFifoLots(queue.lots, t.quantity, (lot, used) => {
+      const leftover = consumeFifoLots(queue.lots, t.quantity, (lot, used) => {
         realized += (t.price - lot.price) * used;
       });
+      if (leftover > 0) {
+        // 잔고보다 큰 매도로 매칭되지 못한 수량은 실현손익 집계에서 제외됨을 표시
+        result.oversold = true;
+      }
       if (queue.currency === "KRW") result.KRW += realized;
       else result.USD += realized;
     }

@@ -13,6 +13,7 @@ type TradeRow = {
   price: number
   quantity: number
   trade_date: string
+  sequence: number
   memo: string | null
   created_at: string
   accounts?: { alias: string; broker_name: string } | null
@@ -29,6 +30,7 @@ type TradePayload = {
   price: number
   quantity: number
   tradeDate: string
+  sequence?: number
   memo?: string
 }
 
@@ -44,6 +46,7 @@ function toTradeRow(payload: TradePayload) {
     price: payload.price,
     quantity: payload.quantity,
     trade_date: payload.tradeDate,
+    sequence: payload.sequence ?? 0,
     memo: payload.memo || null,
   }
 }
@@ -62,6 +65,7 @@ function mapTrade(row: TradeRow): Trade {
     price: Number(row.price),
     quantity: Number(row.quantity),
     tradeDate: row.trade_date.slice(0, 10),
+    sequence: row.sequence ?? 0,
     memo: row.memo ?? undefined,
     createdAt: row.created_at,
     accountName: row.accounts
@@ -108,6 +112,7 @@ export const useTradesStore = defineStore('trades', () => {
       .from('trades')
       .select('*, accounts(alias, broker_name)')
       .order('trade_date', { ascending: false })
+      .order('sequence', { ascending: false })
       .order('created_at', { ascending: false })
 
     if (err) error.value = err.message

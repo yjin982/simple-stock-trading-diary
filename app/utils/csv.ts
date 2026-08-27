@@ -2,7 +2,7 @@ import type { Trade } from '~/types'
 import { todayKST } from './date'
 
 const CSV_HEADERS = [
-  '거래일', '종목명', '종목코드', '시장', '거래소',
+  '거래일', '순서', '종목명', '종목코드', '시장', '거래소',
   '거래구분', '단가', '수량', '거래금액', '통화', '계좌', '메모',
 ]
 
@@ -18,6 +18,7 @@ function escapeCell(value: string | number | undefined | null): string {
 function tradeToRow(trade: Trade): string {
   const cells = [
     trade.tradeDate,
+    trade.sequence,
     trade.stockName,
     trade.stockCode,
     trade.market,

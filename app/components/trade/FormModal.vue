@@ -97,6 +97,21 @@
         />
       </UiFormField>
 
+      <!-- 같은 날짜 내 순서 -->
+      <UiFormField
+        label="같은 날짜 내 순서"
+        hint="같은 거래일에 여러 건이 있을 때 처리 순서를 정합니다. 숫자가 낮을수록 먼저 처리됩니다."
+      >
+        <UiInput
+          v-model="form.sequence"
+          type="number"
+          min="0"
+          step="1"
+          placeholder="0"
+          class="w-full"
+        />
+      </UiFormField>
+
       <!-- 매수/매도 이유 -->
       <UiFormField :label="form.type === 'BUY' ? '매수 이유' : '매도 이유'">
         <UiTextarea
@@ -151,13 +166,20 @@ const selectedAccountCurrency = computed(() => {
   return acc?.currency ?? null
 })
 
-// 매도 시 선택 가능한 보유 종목 목록 (수정 중인 거래 자신은 FIFO 계산에서 제외해 원래 보유수량 기준으로 판단)
+// 매도 시 선택 가능한 보유 종목 목록.
+// 수정 중인 거래 자신은 제외하고, "이 거래가 저장될 시점"(거래일·순서) 이전/동시의
+// 거래만으로 FIFO를 계산해 실제 그 시점에 보유했던 수량을 기준으로 판단한다.
 const accountHoldings = computed(() => {
   if (form.type !== 'SELL' || !form.accountId) return []
 
-  const trades = props.editTrade
-    ? tradesStore.items.filter(t => t.id !== props.editTrade!.id)
-    : tradesStore.items
+  const targetDate = form.date
+  const targetSequence = Number(form.sequence) || 0
+
+  const trades = tradesStore.items.filter((t) => {
+    if (props.editTrade && t.id === props.editTrade.id) return false
+    if (t.tradeDate !== targetDate) return t.tradeDate < targetDate
+    return t.sequence <= targetSequence
+  })
 
   const positions = buildFifoPositions(trades)
   const holdings: HoldingOption[] = []
@@ -198,6 +220,7 @@ function emptyForm() {
     currency: '' as 'KRW' | 'USD' | '',
     price: '',
     quantity: '',
+    sequence: '0',
     memo: '',
   }
 }
@@ -243,6 +266,7 @@ watch(
         currency: props.editTrade.currency,
         price: String(props.editTrade.price),
         quantity: String(props.editTrade.quantity),
+        sequence: String(props.editTrade.sequence ?? 0),
         memo: props.editTrade.memo ?? '',
       })
       nextTick(() => {
@@ -347,6 +371,7 @@ async function handleSubmit() {
     price: Number(form.price),
     quantity: Number(form.quantity),
     tradeDate: form.date,
+    sequence: Number(form.sequence) || 0,
     memo: form.memo || undefined,
   }
 
