@@ -136,7 +136,7 @@
                 v-if="showStock"
                 :class="['py-2.5 align-top', card ? 'px-4' : '']"
               >
-                <NuxtLink :to="`/holdings/${trade.stockCode}`">
+                <NuxtLink :to="`/holdings/${trade.market}/${trade.stockCode}`">
                   <div class="font-medium hover:underline">
                     {{ trade.stockName }}
                   </div>

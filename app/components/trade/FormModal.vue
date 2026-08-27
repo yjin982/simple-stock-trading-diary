@@ -89,9 +89,9 @@
         <UiInput
           v-model="form.quantity"
           type="number"
-          min="1"
+          min="0"
           :max="maxQuantity ?? undefined"
-          step="1"
+          :step="form.market === 'KR' ? '1' : 'any'"
           placeholder="0"
           class="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
@@ -203,7 +203,7 @@ const accountHoldings = computed(() => {
 
 const maxQuantity = computed(() => {
   if (form.type !== 'SELL') return null
-  return accountHoldings.value.find(h => h.code === form.stockCode)?.quantity ?? 0
+  return accountHoldings.value.find(h => h.code === form.stockCode && h.market === form.market)?.quantity ?? 0
 })
 
 const today = todayKST()
@@ -235,13 +235,20 @@ const errors = reactive({
   quantity: '',
 })
 
+// 국내 종목은 정수 수량만 허용, 해외 종목은 소수(fractional shares) 허용
+function isQuantityFormatValid(quantity: string, market: 'KR' | 'US' | ''): boolean {
+  const n = Number(quantity)
+  if (!(n > 0)) return false
+  return market === 'KR' ? Number.isInteger(n) : true
+}
+
 const isFormValid = computed(() =>
   form.date !== '' &&
   form.accountId !== '' &&
   form.stockCode !== '' &&
   Number(form.price) > 0 &&
   form.quantity !== '' &&
-  Number(form.quantity) > 0 &&
+  isQuantityFormatValid(form.quantity, form.market) &&
   !quantityExceedsHolding.value,
 )
 
@@ -345,13 +352,15 @@ function validate(): boolean {
   errors.stockCode = form.stockCode ? '' : '종목을 선택하세요.'
   errors.price = Number(form.price) > 0 ? '' : '단가를 입력하세요.'
 
+  const quantityFormatError = form.market === 'KR' ? '국내 종목은 정수 수량만 입력할 수 있습니다.' : '수량을 입력하세요.'
+
   if (form.type === 'SELL') {
     const max = maxQuantity.value ?? 0
-    errors.quantity = form.quantity && Number(form.quantity) > 0 && Number(form.quantity) <= max
+    errors.quantity = form.quantity && isQuantityFormatValid(form.quantity, form.market) && Number(form.quantity) <= max
       ? ''
-      : `수량을 1~${max} 이하로 입력하세요.`
+      : (isQuantityFormatValid(form.quantity, form.market) ? `수량을 1~${max} 이하로 입력하세요.` : quantityFormatError)
   } else {
-    errors.quantity = form.quantity && Number(form.quantity) > 0 ? '' : '수량을 1 이상 입력하세요.'
+    errors.quantity = form.quantity && isQuantityFormatValid(form.quantity, form.market) ? '' : quantityFormatError
   }
 
   return Object.values(errors).every((e) => e === '')

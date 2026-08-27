@@ -1,5 +1,23 @@
 <template>
   <div ref="containerRef" class="relative">
+    <div v-if="accountCurrency === 'BOTH'" class="mb-1.5 flex gap-1">
+      <button
+        type="button"
+        class="rounded px-2 py-1 text-xs font-medium transition-colors"
+        :class="selectedMarket === 'KR' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'"
+        @click="selectMarket('KR')"
+      >
+        국내
+      </button>
+      <button
+        type="button"
+        class="rounded px-2 py-1 text-xs font-medium transition-colors"
+        :class="selectedMarket === 'US' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'"
+        @click="selectMarket('US')"
+      >
+        해외
+      </button>
+    </div>
     <input
       v-model="query"
       type="text"
@@ -84,6 +102,8 @@ const query = ref('')
 const showDropdown = ref(false)
 const highlightedIndex = ref(-1)
 const selectedStock = ref<Stock | null>(null)
+// BOTH(KRW+USD) 계좌는 국내/해외 검색 대상을 사용자가 직접 선택해야 한다.
+const selectedMarket = ref<'KR' | 'US'>(props.accountCurrency === 'USD' ? 'US' : 'KR')
 
 const inputPlaceholder = computed(() => {
   if (!props.accountCurrency) return '계좌를 먼저 선택하세요'
@@ -92,7 +112,7 @@ const inputPlaceholder = computed(() => {
 })
 
 const searchEndpoint = computed<string>(() =>
-  props.accountCurrency === 'KRW' ? '/api/stock/search' : '/api/stock/search-us'
+  selectedMarket.value === 'KR' ? '/api/stock/search' : '/api/stock/search-us'
 )
 
 const { data: stocks, status, execute } = useFetch<Stock[]>(searchEndpoint, {
@@ -101,12 +121,23 @@ const { data: stocks, status, execute } = useFetch<Stock[]>(searchEndpoint, {
   watch: false,
 })
 
-watch(() => props.accountCurrency, () => {
+function resetSearchState() {
   stocks.value = undefined
   query.value = ''
   selectedStock.value = null
   highlightedIndex.value = -1
   showDropdown.value = false
+}
+
+function selectMarket(market: 'KR' | 'US') {
+  if (selectedMarket.value === market) return
+  selectedMarket.value = market
+  resetSearchState()
+}
+
+watch(() => props.accountCurrency, (currency) => {
+  selectedMarket.value = currency === 'USD' ? 'US' : 'KR'
+  resetSearchState()
 })
 
 function onInput() {

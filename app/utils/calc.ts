@@ -1,5 +1,6 @@
 import type { Trade, TradeRow } from "~/types";
 import { daysBetween, fmtYYMMDD } from "./date";
+import { stockKey } from "./stockKey";
 import { toYahooSymbol } from "./yahooSymbol";
 
 export type Lot = { qty: number; price: number };
@@ -44,14 +45,14 @@ function consumeFifoLots(
   return remaining;
 }
 
-// 거래 목록에서 FIFO 방식으로 잔여 포지션 맵을 생성 (키: accountId|stockCode)
+// 거래 목록에서 FIFO 방식으로 잔여 포지션 맵을 생성 (키: accountId|market|stockCode)
 export function buildFifoPositions(trades: Trade[]): Map<string, FifoPosition> {
   const sorted = sortTradesAsc(trades);
   const positions = new Map<string, FifoPosition>();
 
   for (const t of sorted) {
-    // 계좌와 종목코드를 키로 설정. (같은 종목이 다른 계좌에 있을 수 있으므로)
-    const key = `${t.accountId}|${t.stockCode}`;
+    // 계좌+시장+종목코드를 키로 설정. (같은 종목코드가 다른 계좌나 시장(KR/US)에 있을 수 있으므로)
+    const key = `${t.accountId}|${stockKey(t.market, t.stockCode)}`;
     if (t.type === "BUY") {
       // 매수
       if (!positions.has(key)) {
@@ -311,7 +312,7 @@ export function computeRealizedPnl(trades: Trade[]): RealizedPnl {
   const result: RealizedPnl = { KRW: 0, USD: 0, oversold: false };
 
   for (const t of sorted) {
-    const key = `${t.accountId}|${t.stockCode}`;
+    const key = `${t.accountId}|${stockKey(t.market, t.stockCode)}`;
     if (t.type === "BUY") {
       if (!queues.has(key)) {
         queues.set(key, { lots: [], currency: t.currency });

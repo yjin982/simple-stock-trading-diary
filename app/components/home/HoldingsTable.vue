@@ -26,7 +26,7 @@
             >
               <!-- 종목: 첫 행만 rowspan -->
               <td v-if="i === 0" :rowspan="group.rows.length" class="py-3 align-middle">
-                <NuxtLink :to="`/holdings/${group.stockCode}`">
+                <NuxtLink :to="`/holdings/${group.market}/${group.stockCode}`">
                   <div class="font-medium hover:underline">{{ group.stockName }}</div>
                   <div class="text-xs text-muted-foreground">
                     {{ group.stockCode }} · {{ group.market }}
@@ -89,15 +89,16 @@ type HoldingGroup = {
 const holdingGroups = computed<HoldingGroup[]>(() => {
   const map = new Map<string, HoldingGroup>()
   for (const h of props.holdings) {
-    if (!map.has(h.stockCode)) {
-      map.set(h.stockCode, {
+    const key = stockKey(h.market, h.stockCode)
+    if (!map.has(key)) {
+      map.set(key, {
         stockCode: h.stockCode,
         stockName: h.stockName,
         market: h.market,
         rows: [],
       })
     }
-    map.get(h.stockCode)!.rows.push(h)
+    map.get(key)!.rows.push(h)
   }
   return [...map.values()]
 })

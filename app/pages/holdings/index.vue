@@ -128,7 +128,7 @@
                   class="px-4 py-3 align-middle"
                 >
                   <NuxtLink
-                    :to="`/holdings/${group.stockCode}`"
+                    :to="`/holdings/${group.market}/${group.stockCode}`"
                     class="flex items-center gap-2"
                   >
                     <span
@@ -271,7 +271,7 @@ const { holdings: allHoldings, priceTime } = useHoldings(
   toRef(tradesStore, "items"),
 );
 const uniqueStockCount = computed(
-  () => new Set(allHoldings.value.map((h) => h.stockCode)).size,
+  () => new Set(allHoldings.value.map((h) => stockKey(h.market, h.stockCode))).size,
 );
 
 onMounted(() => {
@@ -324,8 +324,9 @@ type HoldingGroup = {
 const groupedHoldings = computed<HoldingGroup[]>(() => {
   const map = new Map<string, HoldingGroup>();
   for (const h of filteredHoldings.value) {
-    if (!map.has(h.stockCode)) {
-      map.set(h.stockCode, {
+    const key = stockKey(h.market, h.stockCode);
+    if (!map.has(key)) {
+      map.set(key, {
         stockCode: h.stockCode,
         stockName: h.stockName,
         market: h.market,
@@ -337,7 +338,7 @@ const groupedHoldings = computed<HoldingGroup[]>(() => {
         groupRate: 0,
       });
     }
-    const g = map.get(h.stockCode)!;
+    const g = map.get(key)!;
     g.rows.push(h);
     g.totalEval += h.currentPrice * h.quantity;
     g.totalPnl += h.pnl;

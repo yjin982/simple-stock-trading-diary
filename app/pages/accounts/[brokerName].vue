@@ -195,7 +195,7 @@
             >
               <td class="px-5 py-2.5 align-top">
                 <NuxtLink
-                  :to="`/holdings/${h.stockCode}`"
+                  :to="`/holdings/${h.market}/${h.stockCode}`"
                   class="flex items-center gap-1.5"
                 >
                   <span

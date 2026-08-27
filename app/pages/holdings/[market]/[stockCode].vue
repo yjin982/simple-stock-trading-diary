@@ -54,6 +54,7 @@
         </div>
         <HoldingsTradeHistory
           :stock-code="stockCode"
+          :market="market"
           :currency="holdings[0]!.currency"
           show-actions
           @edit-trade="handleEditTrade"
@@ -114,6 +115,7 @@
             <div class="overflow-hidden border rounded-lg">
               <HoldingsTradeHistory
                 :stock-code="stockCode"
+                :market="market"
                 :currency="h.currency"
                 :account-id="h.accountId"
                 show-actions
@@ -141,6 +143,7 @@ import type { Trade } from "~/types";
 
 const route = useRoute();
 const stockCode = route.params.stockCode as string;
+const market = route.params.market as "KR" | "US";
 
 const tradesStore = useTradesStore();
 const accountsStore = useAccountsStore();
@@ -151,7 +154,7 @@ const { holdings: allHoldings, priceTime } = useHoldings(
   toRef(tradesStore, "items"),
 );
 const holdings = computed(() =>
-  allHoldings.value.filter((h) => h.stockCode === stockCode),
+  allHoldings.value.filter((h) => h.stockCode === stockCode && h.market === market),
 );
 
 function getAccountInfo(accountId: string) {

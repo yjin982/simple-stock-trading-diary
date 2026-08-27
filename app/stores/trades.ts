@@ -123,56 +123,68 @@ export const useTradesStore = defineStore('trades', () => {
 
   async function add(payload: TradePayload): Promise<Trade | null> {
     error.value = null
+    loading.value = true
+    try {
+      const { data: { session } } = await client.auth.getSession()
+      if (!session) { error.value = '로그인이 필요합니다.'; return null }
 
-    const { data: { session } } = await client.auth.getSession()
-    if (!session) { error.value = '로그인이 필요합니다.'; return null }
+      const { data, error: err } = await client
+        .from('trades')
+        .insert({ user_id: session.user.id, ...toTradeRow(payload) })
+        .select('*, accounts(alias, broker_name)')
+        .single()
 
-    const { data, error: err } = await client
-      .from('trades')
-      .insert({ user_id: session.user.id, ...toTradeRow(payload) })
-      .select('*, accounts(alias, broker_name)')
-      .single()
+      if (err) { error.value = err.message; return null }
 
-    if (err) { error.value = err.message; return null }
+      const trade = mapTrade(data as TradeRow)
+      items.value.unshift(trade)
 
-    const trade = mapTrade(data as TradeRow)
-    items.value.unshift(trade)
+      // 최초 거래 종목이면 stock_settings 레코드 자동 생성
+      const stockSettingsStore = useStockSettingsStore()
+      await stockSettingsStore.upsertMeta(payload.stockCode, payload.stockName, payload.market)
 
-    // 최초 거래 종목이면 stock_settings 레코드 자동 생성
-    const stockSettingsStore = useStockSettingsStore()
-    await stockSettingsStore.upsertMeta(payload.stockCode, payload.stockName, payload.market)
-
-    return trade
+      return trade
+    } finally {
+      loading.value = false
+    }
   }
 
   async function update(id: string, payload: TradePayload): Promise<Trade | null> {
     error.value = null
+    loading.value = true
+    try {
+      const { data, error: err } = await client
+        .from('trades')
+        .update(toTradeRow(payload))
+        .eq('id', id)
+        .select('*, accounts(alias, broker_name)')
+        .single()
 
-    const { data, error: err } = await client
-      .from('trades')
-      .update(toTradeRow(payload))
-      .eq('id', id)
-      .select('*, accounts(alias, broker_name)')
-      .single()
+      if (err) { error.value = err.message; return null }
 
-    if (err) { error.value = err.message; return null }
-
-    const trade = mapTrade(data as TradeRow)
-    const idx = items.value.findIndex(t => t.id === id)
-    if (idx >= 0) items.value[idx] = trade
-    return trade
+      const trade = mapTrade(data as TradeRow)
+      const idx = items.value.findIndex(t => t.id === id)
+      if (idx >= 0) items.value[idx] = trade
+      return trade
+    } finally {
+      loading.value = false
+    }
   }
 
   async function remove(id: string) {
     error.value = null
+    loading.value = true
+    try {
+      const { error: err } = await client
+        .from('trades')
+        .delete()
+        .eq('id', id)
 
-    const { error: err } = await client
-      .from('trades')
-      .delete()
-      .eq('id', id)
-
-    if (err) error.value = err.message
-    else items.value = items.value.filter(t => t.id !== id)
+      if (err) error.value = err.message
+      else items.value = items.value.filter(t => t.id !== id)
+    } finally {
+      loading.value = false
+    }
   }
 
   function clearError() { error.value = null }

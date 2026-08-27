@@ -256,6 +256,7 @@ type AccountGroup = {
 
 const props = defineProps<{
   stockCode: string;
+  market: "KR" | "US";
   currency: "KRW" | "USD";
   showActions?: boolean;
   accountId?: string;
@@ -289,6 +290,7 @@ const accountGroups = computed<AccountGroup[]>(() => {
     tradesStore.items.filter(
       (t) =>
         t.stockCode === props.stockCode &&
+        t.market === props.market &&
         (!props.accountId || t.accountId === props.accountId),
     ),
   );
