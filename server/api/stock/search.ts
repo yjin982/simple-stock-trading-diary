@@ -19,14 +19,28 @@ interface KrxBaseInfoItem {
   LIST_SHRS: string;
 }
 
-// 전일 기준 영업일 YYYYMMDD
-function getRecentWeekday(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  const day = d.getDay();
-  if (day === 0) d.setDate(d.getDate() - 2); // 일 → 금
-  if (day === 6) d.setDate(d.getDate() - 1); // 토 → 금
+// 서버 실행 위치와 무관하게 KST 기준 날짜를 사용해야 한국 시간대 경계에서
+// 기준일이 하루 어긋나는 문제를 피할 수 있다.
+function toKstDate(base: Date): Date {
+  return new Date(base.getTime() + 9 * 60 * 60 * 1000);
+}
+
+function formatYYYYMMDD(d: Date): string {
   return d.toISOString().slice(0, 10).replace(/-/g, "");
+}
+
+// 전일부터 거슬러 올라가며 주말을 제외한 영업일 후보(KST 기준) 목록을 반환.
+// 공휴일이라 KRX 응답이 비어 있는 경우, 호출부에서 다음 후보로 순차 재시도한다.
+function recentBusinessDays(maxCandidates = 5): string[] {
+  const days: string[] = [];
+  const cursor = toKstDate(new Date());
+  cursor.setUTCDate(cursor.getUTCDate() - 1);
+  while (days.length < maxCandidates) {
+    const day = cursor.getUTCDay();
+    if (day !== 0 && day !== 6) days.push(formatYYYYMMDD(cursor));
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+  }
+  return days;
 }
 
 const KRX_ENDPOINTS = {
@@ -105,19 +119,29 @@ const fetchAllKrEtfs = defineCachedFunction(
 
 export default defineEventHandler(async (event) => {
   const { name } = getQuery(event);
-  if (!name) {
+  const query = typeof name === "string" ? name.trim().toLowerCase() : "";
+  if (!query) {
     throw createError({
       statusCode: 400,
       statusMessage: "검색어(name)가 필요합니다.",
     });
   }
 
-  const basDd = getRecentWeekday();
-  const [allStocks, allEtfs] = await Promise.all([
-    fetchAllKrStocks(basDd),
-    fetchAllKrEtfs(basDd),
-  ]);
-  const query = String(name).trim().toLowerCase();
+  // 최근 영업일부터 순서대로 시도해, 공휴일이라 KRX 응답이 비어 있으면
+  // 다음(더 이전) 영업일로 자동 재시도한다.
+  let allStocks: KrxItemWithExchange[] = [];
+  let allEtfs: KrxEtfItem[] = [];
+  for (const basDd of recentBusinessDays()) {
+    const [stocks, etfs] = await Promise.all([
+      fetchAllKrStocks(basDd),
+      fetchAllKrEtfs(basDd),
+    ]);
+    if (stocks.length > 0 || etfs.length > 0) {
+      allStocks = stocks;
+      allEtfs = etfs;
+      break;
+    }
+  }
 
   const stockResults = allStocks
     .filter((item) => {

@@ -38,6 +38,13 @@ export default defineCachedEventHandler(
         statusMessage: "유효한 심볼이 없습니다.",
       });
     }
+    const MAX_SYMBOLS = 50;
+    if (symbolList.length > MAX_SYMBOLS) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `심볼은 최대 ${MAX_SYMBOLS}개까지 조회할 수 있습니다.`,
+      });
+    }
 
     const raw = await (yahooFinance as any).quote(symbolList);
     const quotes: Array<{

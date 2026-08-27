@@ -6,8 +6,14 @@ const CSV_HEADERS = [
   '거래구분', '단가', '수량', '거래금액', '통화', '계좌', '메모',
 ]
 
+// =, +, -, @로 시작하는 값은 Excel/시트에서 수식으로 해석될 수 있어
+// 앞에 작은따옴표를 붙여 일반 텍스트로 취급되게 한다 (CSV 수식 주입 방어).
+function escapeFormulaPrefix(str: string): string {
+  return /^[=+\-@]/.test(str) ? `'${str}` : str
+}
+
 function escapeCell(value: string | number | undefined | null): string {
-  const str = value == null ? '' : String(value)
+  const str = escapeFormulaPrefix(value == null ? '' : String(value))
   // 쉼표, 큰따옴표, 줄바꿈이 포함된 경우 큰따옴표로 감쌈
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`
