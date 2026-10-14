@@ -17,6 +17,15 @@ export default defineNuxtConfig({
   tailwindcss: {
     cssPath: "~/assets/css/main.css",
   },
+  nitro: {
+    vercel: {
+      // Nitro는 Build Output API(.vercel/output/config.json)로 배포하므로
+      // vercel.json의 crons는 반영되지 않는다. 여기서 선언해야 config.json에 포함된다.
+      config: {
+        crons: [{ path: "/api/cron/keep-alive", schedule: "0 0 * * *" }],
+      },
+    },
+  },
   typescript: {
     strict: true,
   },
