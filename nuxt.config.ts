@@ -24,6 +24,8 @@ export default defineNuxtConfig({
     // 서버 전용 키 — NUXT_ 접두사 env가 자동 주입됨 (클라이언트에 노출 안 됨)
     dataGoKrServiceKey: "",
     krxAuthKey: "",
+    // Vercel Cron이 보내는 CRON_SECRET과 같은 값을 NUXT_CRON_SECRET으로도 설정해야 함
+    cronSecret: "",
     public: {
       supabaseUrl: "",
       supabaseKey: "",
