@@ -114,7 +114,7 @@
 
       <!-- 빈 상태 -->
       <UiEmptyState
-        v-else-if="!isLoading"
+        v-else-if="!isFetching"
         :icon="ScrollText"
         title="매매 내역이 없습니다"
         description="선택한 기간에 등록된 매매 이력이 없어요."
@@ -124,7 +124,7 @@
       <!-- 무한 스크롤 센티넬 -->
       <div ref="sentinelRef" class="flex items-center justify-center py-2">
         <div
-          v-if="isLoading"
+          v-if="isFetching"
           class="flex items-center gap-2 text-sm text-muted-foreground"
         >
           <Loader2 class="w-4 h-4 animate-spin" />
@@ -197,7 +197,11 @@ const customStart = ref("");
 const customEnd = ref("");
 const groupBy = ref<GroupBy>("date");
 const loadedCount = ref(PAGE_SIZE);
-const isLoading = ref(false);
+// 거래는 스토어가 이미 전부 받아 두므로, 실제로 기다리는 것은 최초 목록 조회뿐이다.
+// (스토어 loading은 저장·삭제 중에도 켜지므로 목록이 이미 있으면 로딩으로 보지 않는다.)
+const isFetching = computed(
+  () => tradesStore.loading && tradesStore.items.length === 0,
+);
 
 watch([selectedPeriod, customStart, customEnd, groupBy], () => {
   loadedCount.value = PAGE_SIZE;
@@ -300,12 +304,11 @@ const canLoadMore = computed(
   () => paginatedCount.value < totalFilteredCount.value,
 );
 
-async function loadMore() {
-  if (isLoading.value || !canLoadMore.value) return;
-  isLoading.value = true;
-  await new Promise<void>((resolve) => setTimeout(resolve, 400));
+// 데이터는 이미 메모리에 있으므로 기다리지 않고 다음 PAGE_SIZE건을 바로 그린다.
+// (한 번에 다 그리지 않는 것은 렌더링 비용 때문이다.)
+function loadMore() {
+  if (!canLoadMore.value) return;
   loadedCount.value += PAGE_SIZE;
-  isLoading.value = false;
 }
 
 // --- 무한 스크롤 ---
