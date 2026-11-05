@@ -53,7 +53,7 @@
       </li>
       <!-- 에러 -->
       <li v-else-if="status === 'error'" class="px-3 py-3 text-sm text-destructive text-center">
-        {{ searchError?.statusMessage || '검색 중 오류가 발생했습니다.' }}
+        {{ apiErrorMessage(searchError, '검색 중 오류가 발생했습니다.') }}
       </li>
       <!-- 결과 -->
       <template v-else-if="stocks && stocks.length > 0">

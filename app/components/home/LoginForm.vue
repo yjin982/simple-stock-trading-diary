@@ -51,7 +51,6 @@
 
 <script setup lang="ts">
 const client = useSupabaseClient();
-const config = useRuntimeConfig();
 
 const form = reactive({ email: "", password: "" });
 const loading = ref(false);
@@ -69,7 +68,21 @@ function login() {
   signIn(form.email, form.password);
 }
 
-function loginAsDemo() {
-  signIn(config.public.demoEmail, config.public.demoPassword);
+// 데모 비밀번호는 서버에만 있다. 서버가 로그인한 세션을 받아 이 브라우저의 세션으로 설정한다.
+async function loginAsDemo() {
+  error.value = "";
+  loading.value = true;
+  try {
+    const { accessToken, refreshToken } = await $fetch("/api/auth/demo", { method: "POST" });
+    const { error: err } = await client.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    if (err) error.value = err.message;
+  } catch (e) {
+    error.value = apiErrorMessage(e, "데모 계정으로 로그인하지 못했습니다.");
+  } finally {
+    loading.value = false;
+  }
 }
 </script>

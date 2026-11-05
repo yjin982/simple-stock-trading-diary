@@ -75,7 +75,7 @@ NUXT_CRON_SECRET=your_cron_secret
 | `SUPABASE_KEY` | Supabase anon public key |
 | `NUXT_KRX_AUTH_KEY` | KRX Open API 인증키 (`data-dbg.krx.co.kr`). 아래 KRX API 이용 신청 필요 |
 | `NUXT_CRON_SECRET` | keep-alive cron 호출 검증용. Vercel의 `CRON_SECRET`과 같은 값 |
-| `NUXT_PUBLIC_DEMO_EMAIL`, `NUXT_PUBLIC_DEMO_PASSWORD` | (선택) 로그인 화면의 "데모 계정으로 체험하기" 계정. 브라우저에 노출되므로 실제 계정을 쓰지 마세요 |
+| `NUXT_DEMO_EMAIL`, `NUXT_DEMO_PASSWORD` | (선택) 로그인 화면의 "데모 계정으로 체험하기" 계정. 서버(`/api/auth/demo`)에서만 쓰고 브라우저에는 보내지 않습니다. 누구나 이 계정으로 들어와 데이터를 바꿀 수 있으니 실제 계정을 쓰지 마세요 |
 
 ### KRX Open API 이용 신청
 
@@ -136,6 +136,7 @@ app/
 └── types/                         # 공용 타입, Supabase 테이블 타입
 server/
 ├── api/
+│   ├── auth/demo.post.ts         # 데모 계정 로그인 (서버에서 로그인 후 세션만 전달)
 │   ├── stock/
 │   │   ├── search.ts              # KRX 국내 종목 검색 (전체 목록 12시간 캐시)
 │   │   ├── search-us.ts           # Yahoo 해외 종목 검색 (1시간 캐시)

@@ -34,11 +34,13 @@ export default defineNuxtConfig({
     krxAuthKey: "",
     // Vercel Cron이 보내는 CRON_SECRET과 같은 값을 NUXT_CRON_SECRET으로도 설정해야 함
     cronSecret: "",
+    // 데모 계정 — 서버(/api/auth/demo)에서만 사용해 비밀번호가 브라우저 번들에 들어가지 않게 한다.
+    // NUXT_DEMO_EMAIL / NUXT_DEMO_PASSWORD로 주입
+    demoEmail: "",
+    demoPassword: "",
     public: {
       supabaseUrl: "",
       supabaseKey: "",
-      demoEmail: "",
-      demoPassword: "",
     },
   },
 });
