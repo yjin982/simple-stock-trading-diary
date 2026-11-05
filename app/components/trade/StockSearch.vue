@@ -53,7 +53,7 @@
       </li>
       <!-- 에러 -->
       <li v-else-if="status === 'error'" class="px-3 py-3 text-sm text-destructive text-center">
-        검색 중 오류가 발생했습니다.
+        {{ searchError?.statusMessage || '검색 중 오류가 발생했습니다.' }}
       </li>
       <!-- 결과 -->
       <template v-else-if="stocks && stocks.length > 0">
@@ -115,7 +115,7 @@ const searchEndpoint = computed<string>(() =>
   selectedMarket.value === 'KR' ? '/api/stock/search' : '/api/stock/search-us'
 )
 
-const { data: stocks, status, execute } = useFetch<Stock[]>(searchEndpoint, {
+const { data: stocks, status, error: searchError, execute } = useFetch<Stock[]>(searchEndpoint, {
   query: { name: query },
   immediate: false,
   watch: false,

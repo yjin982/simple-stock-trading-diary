@@ -118,6 +118,8 @@ const fetchAllKrEtfs = defineCachedFunction(
 );
 
 export default defineEventHandler(async (event) => {
+  await requireUser(event);
+
   const { name } = getQuery(event);
   const query = typeof name === "string" ? name.trim().toLowerCase() : "";
   if (!query) {
@@ -131,16 +133,28 @@ export default defineEventHandler(async (event) => {
   // 다음(더 이전) 영업일로 자동 재시도한다.
   let allStocks: KrxItemWithExchange[] = [];
   let allEtfs: KrxEtfItem[] = [];
-  for (const basDd of recentBusinessDays()) {
-    const [stocks, etfs] = await Promise.all([
-      fetchAllKrStocks(basDd),
-      fetchAllKrEtfs(basDd),
-    ]);
-    if (stocks.length > 0 || etfs.length > 0) {
-      allStocks = stocks;
-      allEtfs = etfs;
-      break;
+  try {
+    for (const basDd of recentBusinessDays()) {
+      const [stocks, etfs] = await Promise.all([
+        fetchAllKrStocks(basDd),
+        fetchAllKrEtfs(basDd),
+      ]);
+      if (stocks.length > 0 || etfs.length > 0) {
+        allStocks = stocks;
+        allEtfs = etfs;
+        break;
+      }
     }
+  } catch (err) {
+    // KRX의 401을 그대로 넘기면 앱 로그인이 풀린 것처럼 보이므로 외부 서버 오류(502)로 구분한다.
+    const krxStatus = (err as { statusCode?: number }).statusCode;
+    throw createError({
+      statusCode: 502,
+      statusMessage:
+        krxStatus === 401 || krxStatus === 403
+          ? "KRX 인증키가 유효하지 않거나 이 API의 사용 승인이 없습니다."
+          : "국내 종목 검색 서버(KRX)에서 응답을 받지 못했습니다.",
+    });
   }
 
   const stockResults = allStocks
