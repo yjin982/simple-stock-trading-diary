@@ -10,12 +10,7 @@
     >
       일부 종목에서 보유수량을 초과하는 매도 이력이 발견되어 실현손익 계산이 정확하지 않을 수 있습니다. 매매내역을 확인해주세요.
     </p>
-    <p
-      v-if="summary.hasEstimatedPrice"
-      class="mb-3 rounded-md border border-muted-foreground/30 bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
-    >
-      일부 종목의 현재가를 조회하지 못해 평균단가로 대체한 추정값이 아래 합계에 포함되어 있습니다.
-    </p>
+    <UiEstimatedPriceNotice :holdings="holdings" :loading="pricesLoading" class="mb-3" />
 
     <!-- 합산 요약 카드 -->
     <div
@@ -25,22 +20,29 @@
       <UiCard
         title="총 평가금액"
         :value="evalDisp.value"
-        sub-value="USD 환산 포함"
+        :sub-value="combinedSubValue"
       />
       <UiCard
         title="평가손익"
         :value="unrealizedDisp.value"
+        :sub-value="rateMissingSub"
         :trend="unrealizedDisp.trend"
       />
       <UiCard
         title="실현손익"
         :value="realizedDisp.value"
+        :sub-value="rateMissingSub"
         :trend="realizedDisp.trend"
       />
-      <UiCard title="총 매수금액" :value="costDisp.value" />
+      <UiCard
+        title="총 매수금액"
+        :value="costDisp.value"
+        :sub-value="rateMissingSub"
+      />
       <UiCard
         title="총 수익률"
         :value="returnDisp.value"
+        :sub-value="rateMissingSub"
         :trend="returnDisp.trend"
         class="col-span-2 sm:col-span-1"
       />
@@ -156,15 +158,32 @@ const summary = useSummary(
   toRef(props, "trades"),
 );
 
-const { usdKrw } = useExchangeRate();
+const { usdKrw, rateMissingReason } = useExchangeRate();
 
 // KRW + USD 환산 합산 가능 여부
 const canCombine = computed(
   () => summary.value.hasKRW && summary.value.hasUSD && !!usdKrw.value,
 );
 
+// KRW·USD가 모두 있는데 환율이 없는 경우. 원화 금액만 보여 주면 USD가 빠진 값이
+// 합계처럼 보이므로 합산 카드는 "계산 불가"로 두고 아래 통화별 카드를 보게 한다.
+const rateMissing = computed(
+  () => summary.value.hasKRW && summary.value.hasUSD && !usdKrw.value,
+);
+const RATE_MISSING_DISP = { value: "계산 불가", trend: "neutral" as const };
+
+const rateMissingSub = computed(() =>
+  rateMissing.value ? (rateMissingReason.value ?? undefined) : undefined,
+);
+
+const combinedSubValue = computed(() => {
+  if (canCombine.value) return "USD 환산 포함";
+  if (rateMissing.value) return `${rateMissingReason.value} · 아래 통화별 금액 참고`;
+  return undefined;
+});
+
 function combined(krw: number, usd: number): number {
-  return krw + usd * (usdKrw.value ?? 0);
+  return krw + usd * usdKrw.value!;
 }
 
 // 합산 평가금액
@@ -175,7 +194,7 @@ const evalDisp = computed(() => {
     return { value: fmtKRW(combined(s.evalKRW, s.evalUSD)) };
   if (s.hasKRW && !s.hasUSD) return { value: fmtKRW(s.evalKRW) };
   if (!s.hasKRW && s.hasUSD) return { value: fmtUSD(s.evalUSD) };
-  return { value: fmtKRW(s.evalKRW) };
+  return RATE_MISSING_DISP;
 });
 
 // 합산 평가손익
@@ -196,10 +215,7 @@ const unrealizedDisp = computed(() => {
       value: fmtPnl(s.unrealizedUSD, "USD"),
       trend: pnlTrend(s.unrealizedUSD),
     };
-  return {
-    value: fmtPnl(s.unrealizedKRW, "KRW"),
-    trend: pnlTrend(s.unrealizedKRW),
-  };
+  return RATE_MISSING_DISP;
 });
 
 // 합산 실현손익
@@ -220,10 +236,7 @@ const realizedDisp = computed(() => {
       value: fmtPnl(s.realizedUSD, "USD"),
       trend: pnlTrend(s.realizedUSD),
     };
-  return {
-    value: fmtPnl(s.realizedKRW, "KRW"),
-    trend: pnlTrend(s.realizedKRW),
-  };
+  return RATE_MISSING_DISP;
 });
 
 // 합산 매수금액
@@ -234,7 +247,7 @@ const costDisp = computed(() => {
     return { value: fmtKRW(combined(s.costKRW, s.costUSD)) };
   if (s.hasKRW && !s.hasUSD) return { value: fmtKRW(s.costKRW) };
   if (!s.hasKRW && s.hasUSD) return { value: fmtUSD(s.costUSD) };
-  return { value: fmtKRW(s.costKRW) };
+  return RATE_MISSING_DISP;
 });
 
 // 합산 수익률 (미실현 / 총매수금액)
@@ -257,9 +270,6 @@ const returnDisp = computed(() => {
       value: fmtPnlRate(s.returnRateUSD),
       trend: pnlTrend(s.returnRateUSD),
     };
-  return {
-    value: fmtPnlRate(s.returnRateKRW),
-    trend: pnlTrend(s.returnRateKRW),
-  };
+  return RATE_MISSING_DISP;
 });
 </script>

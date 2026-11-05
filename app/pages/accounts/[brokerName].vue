@@ -17,6 +17,11 @@
       <UiPriceDelayNotice :time="priceTime" />
     </div>
 
+    <UiEstimatedPriceNotice
+      :holdings="accountsWithHoldings.flatMap((a) => a.holdings)"
+      :loading="pricesLoading"
+    />
+
     <!-- 빈 상태 -->
     <UiEmptyState
       v-if="brokerAccounts.length === 0"
@@ -335,7 +340,7 @@ const yahooSymbols = computed(() =>
     .map((pos) => toYahooSymbol(pos.stockCode, pos.market, pos.exchange)),
 );
 
-const { priceMap, priceTime } = usePriceMap(yahooSymbols);
+const { priceMap, priceTime, loading: pricesLoading } = usePriceMap(yahooSymbols);
 
 const { krwEquiv } = useExchangeRate();
 

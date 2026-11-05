@@ -3,7 +3,10 @@
     v-if="holdings.length > 0"
     class="p-5 border rounded-lg shadow-sm bg-card text-card-foreground"
   >
-    <h2 class="mb-5 text-sm font-semibold">포트폴리오 비중</h2>
+    <h2 class="text-sm font-semibold" :class="hasEstimatedPrice ? 'mb-1' : 'mb-5'">포트폴리오 비중</h2>
+    <p v-if="hasEstimatedPrice" class="mb-5 text-[11px] text-muted-foreground">
+      현재가를 조회하지 못한 종목은 평균단가 기준으로 반영했습니다.
+    </p>
 
     <div class="grid grid-cols-1 gap-8 md:grid-cols-[1fr_1px_1fr]">
       <!-- Chart 1: 국내/해외 -->
@@ -17,7 +20,14 @@
           class="flex flex-col items-center justify-center gap-4 md:flex-row md:items-center md:gap-5"
         >
           <!-- 도넛 -->
-          <div class="relative flex-shrink-0 h-36 w-36">
+          <div
+            v-if="rateMissing"
+            class="flex flex-col items-center justify-center flex-shrink-0 text-center border border-dashed rounded-full h-36 w-36 text-[11px] text-muted-foreground"
+          >
+            <span>{{ rateMissingReason }}</span>
+            <span>비중 계산 불가</span>
+          </div>
+          <div v-else class="relative flex-shrink-0 h-36 w-36">
             <Doughnut :data="marketChartData" :options="marketChartOptions" />
             <div
               class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
@@ -46,7 +56,7 @@
               />
               <span>{{ d.label }} {{ d.count }}종목</span>
               <span class="ml-auto tabular-nums text-muted-foreground"
-                >{{ d.pct }}%</span
+                >{{ d.pct != null ? `${d.pct}%` : "—" }}</span
               >
             </button>
             <p
@@ -73,7 +83,14 @@
           class="flex flex-col items-center justify-center gap-4 md:flex-row md:items-center md:gap-5"
         >
           <!-- 도넛 -->
-          <div class="relative flex-shrink-0 h-36 w-36">
+          <div
+            v-if="stockChartUnavailable"
+            class="flex flex-col items-center justify-center flex-shrink-0 px-4 text-center border border-dashed rounded-full h-36 w-36 text-[11px] text-muted-foreground"
+          >
+            <span>{{ rateMissingReason }}</span>
+            <span>시장을 선택하면 시장 안의 비중을 볼 수 있습니다</span>
+          </div>
+          <div v-else class="relative flex-shrink-0 h-36 w-36">
             <Doughnut :data="stockChartData" :options="stockChartOptions" />
           </div>
 
@@ -117,7 +134,7 @@ import type { Holding } from "~/types";
 
 ChartJS.register(ArcElement, DoughnutController, Legend, Tooltip);
 
-const props = defineProps<{ holdings: Holding[] }>();
+const props = defineProps<{ holdings: Holding[]; pricesLoading?: boolean }>();
 
 const MARKET_COLORS = { KR: "#3B82F6", US: "#22C55E" } as const;
 
@@ -142,10 +159,7 @@ function toggleMarket(market: "KR" | "US") {
   selectedMarket.value = selectedMarket.value === market ? null : market;
 }
 
-const { usdKrw } = useExchangeRate();
-function toKRW(currency: "KRW" | "USD", amount: number): number {
-  return currency === "USD" ? amount * (usdKrw.value ?? 0) : amount;
-}
+const { toKRW, rateMissingReason } = useExchangeRate();
 
 // 같은 종목(market+stockCode)을 여러 계좌에 나눠 보유해도 하나로 합산해
 // "종목 수"·비중 계산이 계좌 수만큼 중복 집계되지 않게 한다.
@@ -157,7 +171,7 @@ const aggregatedHoldings = computed(() => {
       stockName: string;
       market: "KR" | "US";
       currency: "KRW" | "USD";
-      evalAmountKRW: number;
+      evalAmount: number; // 종목 통화 기준
     }
   >();
   for (const h of props.holdings) {
@@ -168,23 +182,37 @@ const aggregatedHoldings = computed(() => {
         stockName: h.stockName,
         market: h.market,
         currency: h.currency,
-        evalAmountKRW: 0,
+        evalAmount: 0,
       });
     }
-    map.get(key)!.evalAmountKRW += toKRW(h.currency, h.currentPrice * h.quantity);
+    map.get(key)!.evalAmount += h.currentPrice * h.quantity;
   }
   return [...map.values()];
 });
+
+const hasEstimatedPrice = computed(
+  () => !props.pricesLoading && props.holdings.some((h) => !h.priceAvailable),
+);
+
+// 국내·해외를 섞어 비교하려면 원화 환산이 필요하다. 환율이 없으면 비중을 계산하지 않는다.
+// (한 시장 안에서는 통화가 같으므로 시장을 선택하면 환율 없이도 종목별 비중을 볼 수 있다.)
+const rateMissing = computed(
+  () => rateMissingReason.value != null && aggregatedHoldings.value.some((h) => h.currency === "USD"),
+);
 
 // --- Chart 1: 국내/해외 (평가금액 기준) ---
 
 const marketLegend = computed(() => {
   const kr = aggregatedHoldings.value.filter((h) => h.market === "KR");
   const us = aggregatedHoldings.value.filter((h) => h.market === "US");
-  const krAmount = kr.reduce((s, h) => s + h.evalAmountKRW, 0);
-  const usAmount = us.reduce((s, h) => s + h.evalAmountKRW, 0);
+  const sumKRW = (list: typeof kr) =>
+    list.reduce((s, h) => s + (toKRW(h.currency, h.evalAmount) ?? 0), 0);
+  const krAmount = rateMissing.value ? 0 : sumKRW(kr);
+  const usAmount = rateMissing.value ? 0 : sumKRW(us);
   const total = krAmount + usAmount;
-  if (total === 0) return [];
+  if (!rateMissing.value && total === 0) return [];
+  const pct = (amount: number) =>
+    rateMissing.value ? null : ((amount / total) * 100).toFixed(0);
   const result = [];
   if (kr.length > 0)
     result.push({
@@ -192,7 +220,7 @@ const marketLegend = computed(() => {
       label: "국내",
       count: kr.length,
       amount: krAmount,
-      pct: ((krAmount / total) * 100).toFixed(0),
+      pct: pct(krAmount),
       color: MARKET_COLORS.KR,
     });
   if (us.length > 0)
@@ -201,7 +229,7 @@ const marketLegend = computed(() => {
       label: "해외",
       count: us.length,
       amount: usAmount,
-      pct: ((usAmount / total) * 100).toFixed(0),
+      pct: pct(usAmount),
       color: MARKET_COLORS.US,
     });
   return result;
@@ -257,7 +285,11 @@ const marketChartOptions: ChartOptions<"doughnut"> = {
 
 // --- Chart 2: 종목별 ---
 
+// 전체 보기에서 국내·해외가 섞여 있는데 환율이 없으면 종목별 비중도 계산할 수 없다.
+const stockChartUnavailable = computed(() => !selectedMarket.value && rateMissing.value);
+
 const stockItems = computed(() => {
+  if (stockChartUnavailable.value) return [];
   const filtered = selectedMarket.value
     ? aggregatedHoldings.value.filter((h) => h.market === selectedMarket.value)
     : aggregatedHoldings.value;
@@ -266,7 +298,8 @@ const stockItems = computed(() => {
   const withValue = filtered.map((h) => ({
     stockCode: h.stockCode,
     stockName: h.stockName,
-    value: h.evalAmountKRW,
+    // 시장을 고르면 통화가 하나이므로 종목 통화 그대로 비교한다.
+    value: selectedMarket.value ? h.evalAmount : (toKRW(h.currency, h.evalAmount) ?? 0),
   }));
 
   const sorted = [...withValue].sort((a, b) => b.value - a.value);

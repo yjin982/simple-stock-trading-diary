@@ -14,7 +14,6 @@ type Summary = {
   hasKRW: boolean;
   hasUSD: boolean;
   hasDataIssue: boolean;
-  hasEstimatedPrice: boolean;
 };
 
 export function useSummary(
@@ -36,7 +35,6 @@ export function useSummary(
 
     const hasKRW = trades.value.some((t) => t.currency === "KRW");
     const hasUSD = trades.value.some((t) => t.currency === "USD");
-    const hasEstimatedPrice = holdings.value.some((h) => !h.priceAvailable);
 
     return {
       ...agg,
@@ -45,7 +43,6 @@ export function useSummary(
       hasKRW,
       hasUSD,
       hasDataIssue: oversold,
-      hasEstimatedPrice,
     };
   });
 }

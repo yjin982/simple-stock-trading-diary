@@ -6,6 +6,8 @@
       <UiPriceDelayNotice :time="priceTime" />
     </div>
 
+    <UiEstimatedPriceNotice :holdings="allHoldings" :loading="pricesLoading" />
+
     <!-- 요약 카드 -->
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <UiCard title="보유 종목" :value="`${uniqueStockCount}개`" />
@@ -23,8 +25,9 @@
       />
       <UiCard
         title="평균 수익률"
-        :value="fmtPnlRate(summary.avgRate)"
-        :trend="pnlTrend(summary.avgRate)"
+        :value="summary.avgRate != null ? fmtPnlRate(summary.avgRate) : '—'"
+        :sub-value="summary.avgRate == null ? rateMissingReason ?? undefined : undefined"
+        :trend="summary.avgRate != null ? pnlTrend(summary.avgRate) : 'neutral'"
       />
     </div>
 
@@ -271,13 +274,9 @@ const accountsStore = useAccountsStore();
 const stockSettingsStore = useStockSettingsStore();
 import type { Holding } from "~/types";
 
-const { usdKrw, krwEquiv } = useExchangeRate();
+const { krwEquiv, toKRW, rateMissingReason } = useExchangeRate();
 
-function toKRW(currency: "KRW" | "USD", amount: number): number {
-  return currency === "USD" ? amount * (usdKrw.value ?? 0) : amount;
-}
-
-const { holdings: allHoldings, priceTime } = useHoldings(
+const { holdings: allHoldings, pricesLoading, priceTime } = useHoldings(
   toRef(tradesStore, "items"),
 );
 const uniqueStockCount = computed(
@@ -362,6 +361,23 @@ const groupedHoldings = computed<HoldingGroup[]>(() => {
 });
 
 // --- 그룹 정렬 ---
+// 금액은 원화로 환산해 비교한다. 환율이 없으면 KRW·USD 금액을 서로 비교할 수 없으므로
+// 통화별로 묶은 뒤(KRW 먼저) 같은 통화 안에서만 금액을 비교한다.
+function compareAmount(
+  a: HoldingGroup,
+  b: HoldingGroup,
+  amount: (g: HoldingGroup) => number,
+): number {
+  const aKRW = toKRW(a.currency, amount(a));
+  const bKRW = toKRW(b.currency, amount(b));
+  if (aKRW != null && bKRW != null) return aKRW - bKRW;
+  if (a.currency !== b.currency) {
+    const order = a.currency === "KRW" ? 1 : -1;
+    return sortDesc.value ? order : -order;
+  }
+  return amount(a) - amount(b);
+}
+
 const sortedGroups = computed<HoldingGroup[]>(() => {
   return [...groupedHoldings.value].sort((a, b) => {
     let diff = 0;
@@ -370,10 +386,10 @@ const sortedGroups = computed<HoldingGroup[]>(() => {
         diff = a.groupRate - b.groupRate;
         break;
       case "pnl":
-        diff = toKRW(a.currency, a.totalPnl) - toKRW(b.currency, b.totalPnl);
+        diff = compareAmount(a, b, (g) => g.totalPnl);
         break;
       case "total":
-        diff = toKRW(a.currency, a.totalEval) - toKRW(b.currency, b.totalEval);
+        diff = compareAmount(a, b, (g) => g.totalEval);
         break;
       case "quantity":
         diff = a.totalQuantity - b.totalQuantity;
@@ -390,16 +406,22 @@ const sortedGroups = computed<HoldingGroup[]>(() => {
 const summary = computed(() => {
   const krw = allHoldings.value.filter((h) => h.currency === "KRW");
   const usd = allHoldings.value.filter((h) => h.currency === "USD");
-  // KRW/USD 혼합 가중평균은 환율 환산 후 합산해야 함 (원화-달러 원가를 그대로 더하면 왜곡됨)
-  const totalPnl = allHoldings.value.reduce(
-    (s, h) => s + toKRW(h.currency, h.pnl),
-    0,
-  );
-  const totalCost = allHoldings.value.reduce(
-    (s, h) => s + toKRW(h.currency, h.currentPrice * h.quantity - h.pnl),
-    0,
-  );
-  const avgRate = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
+  // KRW/USD 혼합 가중평균은 환율 환산 후 합산해야 함 (원화-달러 원가를 그대로 더하면 왜곡됨).
+  // 환율이 없어 USD 종목을 환산할 수 없으면 평균 수익률은 계산하지 않는다(null).
+  let totalPnl: number | null = 0;
+  let totalCost = 0;
+  for (const h of allHoldings.value) {
+    const pnl = toKRW(h.currency, h.pnl);
+    const cost = toKRW(h.currency, h.currentPrice * h.quantity - h.pnl);
+    if (pnl == null || cost == null) {
+      totalPnl = null;
+      break;
+    }
+    totalPnl += pnl;
+    totalCost += cost;
+  }
+  const avgRate =
+    totalPnl == null ? null : totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
   return {
     krwTotal: krw.reduce((s, h) => s + h.currentPrice * h.quantity, 0),
     krwPnl: krw.reduce((s, h) => s + h.pnl, 0),

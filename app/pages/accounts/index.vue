@@ -15,6 +15,8 @@
       <UiPriceDelayNotice :time="priceTime" />
     </div>
 
+    <UiEstimatedPriceNotice :holdings="allHoldings" :loading="pricesLoading" />
+
     <!-- 로딩: 계좌 add/update/remove 중에도 loading이 true가 되므로,
          이미 목록이 있는 상태에서 저장 작업을 할 때는 전체 목록을 스피너로
          가리지 않도록 최초 조회(목록이 비어 있을 때)에만 표시한다. -->
@@ -120,6 +122,12 @@
                       }})
                     </span>
                   </template>
+                  <span
+                    v-if="s?.hasEstimatedPrice && !pricesLoading"
+                    class="text-[11px] text-muted-foreground"
+                  >
+                    일부 종목 현재가 미반영 (평균단가 기준)
+                  </span>
                 </template>
               </div>
 
@@ -202,6 +210,7 @@ const tradesStore = useTradesStore();
 
 type AccountSummary = {
   holdingCount: number;
+  hasEstimatedPrice: boolean;
   krw: { totalEval: number; pnl: number; pnlRate: number } | null;
   usd: { totalEval: number; pnl: number; pnlRate: number } | null;
 };
@@ -214,10 +223,14 @@ const yahooSymbols = computed(() =>
     .map(pos => toYahooSymbol(pos.stockCode, pos.market, pos.exchange)),
 );
 
-const { priceMap, priceTime } = usePriceMap(yahooSymbols);
+const { priceMap, priceTime, loading: pricesLoading } = usePriceMap(yahooSymbols);
+
+const allHoldings = computed(() =>
+  computeHoldingsFromPositions(allPositions.value.values(), priceMap.value),
+);
 
 const accountSummaryById = computed(() => {
-  const holdings = computeHoldingsFromPositions(allPositions.value.values(), priceMap.value);
+  const holdings = allHoldings.value;
 
   const byAccount = new Map<string, PositionHolding[]>();
   for (const h of holdings) {
@@ -230,6 +243,7 @@ const accountSummaryById = computed(() => {
     const agg = aggregateByCurrency(accountHoldings);
     result.set(accountId, {
       holdingCount: accountHoldings.length,
+      hasEstimatedPrice: accountHoldings.some((h) => !h.priceAvailable),
       krw: agg.costKRW > 0 ? { totalEval: agg.evalKRW, pnl: agg.unrealizedKRW, pnlRate: agg.returnRateKRW } : null,
       usd: agg.costUSD > 0 ? { totalEval: agg.evalUSD, pnl: agg.unrealizedUSD, pnlRate: agg.returnRateUSD } : null,
     });
