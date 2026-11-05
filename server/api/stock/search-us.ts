@@ -1,7 +1,4 @@
-import YahooFinance from "yahoo-finance2";
 import type { Stock } from "~/types";
-
-const yahooFinance = new YahooFinance();
 
 // 외부 호출에만 캐시를 건다 (1시간). 검색어는 소문자로 맞춰 같은 검색을 한 번만 호출한다.
 const searchUsStocks = defineCachedFunction(

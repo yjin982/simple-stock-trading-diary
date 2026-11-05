@@ -1,7 +1,4 @@
-import YahooFinance from "yahoo-finance2";
 import type { QuotePriceMap } from "~/types";
-
-const yahooFinance = new YahooFinance();
 
 const MAX_SYMBOLS = 50;
 // 미국 티커(BRK.B), 국내(005930.KS), 환율(USDKRW=X), 지수(^GSPC) 형식만 허용
