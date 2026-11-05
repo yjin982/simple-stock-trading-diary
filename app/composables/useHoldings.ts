@@ -7,7 +7,7 @@ export function useHoldings(trades: Ref<Trade[]>) {
     const seen = new Set<string>();
     const symbols: string[] = [];
     for (const pos of positions.value.values()) {
-      if (lotsQty(pos.lots) > 0) {
+      if (lotsQty(pos.lots) > QTY_EPSILON) {
         const sym = toYahooSymbol(pos.stockCode, pos.market, pos.exchange);
         if (!seen.has(sym)) {
           seen.add(sym);

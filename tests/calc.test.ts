@@ -9,6 +9,7 @@ import {
   computeRealizedPnl,
   lotsCost,
   lotsQty,
+  roundQty,
   sortTradesAsc,
   wouldIntroduceOversell,
   type FifoPosition,
@@ -160,6 +161,37 @@ describe("buildFifoPositions", () => {
     expect(pos.lots).toHaveLength(0);
     expect(pos.oversoldQty).toBe(0);
   });
+
+  // 0.1 + 0.2 = 0.30000000000000004, 0.3 - 0.1 = 0.19999999999999998 같은 부동소수점 오차
+  it("여러 lot을 소수점 수량으로 전량 매도하면 남는 lot이 없다", () => {
+    const pos = buildFifoPositions([
+      buy("2026-01-01", 0.1, 10, usStock()),
+      buy("2026-01-02", 0.2, 12, usStock()),
+      sell("2026-01-03", 0.3, 15, usStock()),
+    ]).get("a1|US|AAPL")!;
+
+    expect(pos.lots).toHaveLength(0);
+    expect(pos.oversoldQty).toBe(0);
+  });
+
+  it("한 lot을 소수점 수량으로 나눠 전량 매도해도 초과 매도로 보지 않는다", () => {
+    const pos = buildFifoPositions([
+      buy("2026-01-01", 0.3, 10, usStock()),
+      sell("2026-01-02", 0.1, 12, usStock()),
+      sell("2026-01-03", 0.2, 15, usStock()),
+    ]).get("a1|US|AAPL")!;
+
+    expect(pos.lots).toHaveLength(0);
+    expect(pos.oversoldQty).toBe(0);
+  });
+});
+
+describe("roundQty", () => {
+  it("부동소수점 오차를 없앤다", () => {
+    expect(roundQty(0.1 + 0.2)).toBe(0.3);
+    expect(roundQty(0.3 - 0.1)).toBe(0.2);
+    expect(roundQty(0.123456)).toBe(0.123456);
+  });
 });
 
 describe("computeHoldingsFromPositions", () => {
@@ -198,6 +230,16 @@ describe("computeHoldingsFromPositions", () => {
 
   it("전량 매도한 포지션은 제외한다", () => {
     const positions = buildFifoPositions([buy("2026-01-01", 10, 100), sell("2026-01-02", 10, 120)]);
+
+    expect(computeHoldingsFromPositions(positions.values(), {})).toEqual([]);
+  });
+
+  it("소수점 오차만 남은 포지션도 제외한다", () => {
+    const positions = buildFifoPositions([
+      buy("2026-01-01", 0.3, 10, usStock()),
+      sell("2026-01-02", 0.1, 12, usStock()),
+      sell("2026-01-03", 0.2, 15, usStock()),
+    ]);
 
     expect(computeHoldingsFromPositions(positions.values(), {})).toEqual([]);
   });
@@ -285,6 +327,26 @@ describe("buildTradeRows", () => {
     expect(rowsTotal).toBeCloseTo(400);
     expect(computeRealizedPnl(trades).KRW).toBeCloseTo(rowsTotal);
   });
+
+  it("입력이 정렬돼 있지 않아도 거래 순서대로 매칭한다", () => {
+    const b1 = buy("2026-01-01", 10, 100);
+    const b2 = buy("2026-01-11", 10, 200);
+    const s1 = sell("2026-01-21", 15, 300);
+    const rows = buildTradeRows([s1, b2, b1]);
+
+    expect(rows.map((r) => r.id)).toEqual([s1.id, b2.id, b1.id]);
+    expect(rows[0]!.realizedPnl).toBeCloseTo(2500);
+  });
+
+  it("소수점 수량으로 전량 매도해도 초과 매도로 표시하지 않는다", () => {
+    const [sellRow] = buildTradeRows([
+      buy("2026-01-01", 0.3, 10, usStock()),
+      sell("2026-01-02", 0.1, 12, usStock()),
+      sell("2026-01-03", 0.2, 15, usStock()),
+    ]);
+
+    expect(sellRow!.oversold).toBe(false);
+  });
 });
 
 describe("wouldIntroduceOversell", () => {
@@ -314,6 +376,16 @@ describe("wouldIntroduceOversell", () => {
     const trades = [buy("2026-01-01", 5, 100), sell("2026-01-02", 8, 120)];
 
     expect(wouldIntroduceOversell(trades, [...trades])).toBe(false);
+  });
+
+  it("소수점 오차로 생긴 차이는 초과 매도로 보지 않는다", () => {
+    const b1 = buy("2026-01-01", 0.1, 10, usStock());
+    const b2 = buy("2026-01-01", 0.2, 10, usStock());
+    const s1 = sell("2026-01-03", 0.3, 12, usStock());
+    // 0.1 + 0.2로 나뉘어 있던 매수를 0.3 한 건으로 합쳐 수정
+    const merged = { ...b1, quantity: 0.3 };
+
+    expect(wouldIntroduceOversell([b1, b2, s1], [merged, s1])).toBe(false);
   });
 });
 

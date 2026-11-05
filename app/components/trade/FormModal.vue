@@ -201,8 +201,9 @@ const accountHoldings = computed(() => {
 
   for (const pos of positions.values()) {
     if (pos.accountId !== form.accountId) continue
-    const quantity = lotsQty(pos.lots)
-    if (quantity <= 0) continue
+    // 0.1 + 0.2 = 0.30000000000000004 같은 소수점 오차가 보유수량 안내·입력값 비교에 섞이지 않게 반올림한다.
+    const quantity = roundQty(lotsQty(pos.lots))
+    if (quantity <= QTY_EPSILON) continue
     holdings.push({
       code: pos.stockCode,
       name: pos.stockName,

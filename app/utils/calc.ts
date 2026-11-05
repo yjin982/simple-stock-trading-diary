@@ -3,7 +3,16 @@ import { daysBetween, fmtYYMMDD } from "./date";
 import { stockKey } from "./stockKey";
 import { toYahooSymbol } from "./yahooSymbol";
 
-export type Lot = { qty: number; price: number };
+export type Lot = { qty: number; price: number; date: string };
+
+// 소수점 수량(미국 주식)은 0.1 + 0.2 = 0.30000000000000004처럼 오차가 남는다.
+// 수량을 0과 비교할 때는 === 0 / > 0 대신 이 값을 기준으로 비교한다.
+export const QTY_EPSILON = 1e-9;
+
+// 화면 표시·입력값 비교용 수량 반올림 (소수점 8자리)
+export function roundQty(qty: number): number {
+  return Math.round(qty * 1e8) / 1e8;
+}
 
 export type FifoPosition = {
   accountId: string;
@@ -26,75 +35,73 @@ export function sortTradesAsc(trades: Trade[]): Trade[] {
   );
 }
 
-// FIFO 방식으로 lots 앞에서부터 sellQty만큼 소진. 소진되는 lot마다 onConsume 호출.
-// 반환값: 잔고 부족으로 소진하지 못하고 남은 수량 (정상 매도라면 0).
-function consumeFifoLots(
-  lots: Lot[],
-  sellQty: number,
-  onConsume?: (lot: Lot, usedQty: number) => void,
-): number {
+// 매도 한 건을 FIFO로 매칭한 결과
+type SellMatch = {
+  matched: Lot[]; // 이번 매도에 소진된 매수 lot (qty는 이번에 쓴 수량)
+  unmatchedQty: number; // 잔고 부족으로 매칭하지 못한 수량 (정상 매도라면 0)
+};
+
+// FIFO 방식으로 lots 앞에서부터 sellQty만큼 소진한다.
+function consumeFifoLots(lots: Lot[], sellQty: number): SellMatch {
+  const matched: Lot[] = [];
   let remaining = sellQty;
-  while (remaining > 0 && lots.length > 0) {
+  while (remaining > QTY_EPSILON && lots.length > 0) {
     const lot = lots[0]!;
     const used = Math.min(remaining, lot.qty);
-    onConsume?.(lot, used);
+    matched.push({ qty: used, price: lot.price, date: lot.date });
     lot.qty -= used;
     remaining -= used;
-    if (lot.qty === 0) lots.shift();
+    if (lot.qty <= QTY_EPSILON) lots.shift();
   }
-  return remaining;
+  return { matched, unmatchedQty: remaining > QTY_EPSILON ? remaining : 0 };
 }
 
-// 거래 목록에서 FIFO 방식으로 잔여 포지션 맵을 생성 (키: accountId|market|stockCode)
-export function buildFifoPositions(trades: Trade[]): Map<string, FifoPosition> {
-  const sorted = sortTradesAsc(trades);
+// 모든 FIFO 계산의 공통 루프. 거래를 sortTradesAsc 순서로 처리하며 포지션별로
+// 매수 lot을 쌓고 매도마다 소진한다. 거래마다 onTrade를 호출한다 (매도면 sell에 매칭 결과).
+// buildFifoPositions / computeRealizedPnl / buildTradeRows가 모두 이 함수를 써서
+// 화면마다 매칭 결과가 달라지지 않게 한다.
+function runFifo(
+  trades: Trade[],
+  onTrade?: (trade: Trade, pos: FifoPosition, sell: SellMatch | null) => void,
+): Map<string, FifoPosition> {
   const positions = new Map<string, FifoPosition>();
 
-  for (const t of sorted) {
+  for (const t of sortTradesAsc(trades)) {
     // 계좌+시장+종목코드를 키로 설정. (같은 종목코드가 다른 계좌나 시장(KR/US)에 있을 수 있으므로)
     const key = `${t.accountId}|${stockKey(t.market, t.stockCode)}`;
+    let pos = positions.get(key);
+    if (!pos) {
+      // 매수 이력 없이 매도부터 들어온 경우에도 잔고 부족 수량을 추적할 수 있도록 포지션을 만든다.
+      pos = {
+        accountId: t.accountId,
+        accountName: t.accountName,
+        stockCode: t.stockCode,
+        stockName: t.stockName,
+        market: t.market,
+        exchange: t.exchange,
+        currency: t.currency,
+        lots: [],
+        oversoldQty: 0,
+      };
+      positions.set(key, pos);
+    }
+
     if (t.type === "BUY") {
-      // 매수
-      if (!positions.has(key)) {
-        // 최초 거래 = 키가 없음
-        positions.set(key, {
-          accountId: t.accountId,
-          accountName: t.accountName,
-          stockCode: t.stockCode,
-          stockName: t.stockName,
-          market: t.market,
-          exchange: t.exchange,
-          currency: t.currency,
-          lots: [],
-          oversoldQty: 0,
-        });
-      }
-      // 매수 이력이 있음.
-      positions.get(key)!.lots.push({ qty: t.quantity, price: t.price });
+      pos.lots.push({ qty: t.quantity, price: t.price, date: t.tradeDate });
+      onTrade?.(t, pos, null);
     } else {
-      // 매도
-      let pos = positions.get(key);
-      if (!pos) {
-        // 매수 이력이 전혀 없는 상태에서 매도부터 들어온 경우에도 잔고 부족
-        // 수량을 추적할 수 있도록 빈 포지션을 만들어둔다.
-        pos = {
-          accountId: t.accountId,
-          accountName: t.accountName,
-          stockCode: t.stockCode,
-          stockName: t.stockName,
-          market: t.market,
-          exchange: t.exchange,
-          currency: t.currency,
-          lots: [],
-          oversoldQty: 0,
-        };
-        positions.set(key, pos);
-      }
-      pos.oversoldQty += consumeFifoLots(pos.lots, t.quantity);
+      const sell = consumeFifoLots(pos.lots, t.quantity);
+      pos.oversoldQty += sell.unmatchedQty;
+      onTrade?.(t, pos, sell);
     }
   }
 
   return positions;
+}
+
+// 거래 목록에서 FIFO 방식으로 잔여 포지션 맵을 생성 (키: accountId|market|stockCode)
+export function buildFifoPositions(trades: Trade[]): Map<string, FifoPosition> {
+  return runFifo(trades);
 }
 
 // 매수 거래 수정·삭제가 이후 매도 내역을 초과매도로 만드는지 확인.
@@ -107,7 +114,7 @@ export function wouldIntroduceOversell(before: Trade[], after: Trade[]): boolean
   const afterPositions = buildFifoPositions(after);
   for (const [key, pos] of afterPositions) {
     const prevOversoldQty = beforePositions.get(key)?.oversoldQty ?? 0;
-    if (pos.oversoldQty > prevOversoldQty) return true;
+    if (pos.oversoldQty > prevOversoldQty + QTY_EPSILON) return true;
   }
   return false;
 }
@@ -159,7 +166,7 @@ export function computeHoldingsFromPositions(
   const result: PositionHolding[] = [];
   for (const pos of positions) {
     const quantity = lotsQty(pos.lots);
-    if (quantity <= 0) continue;
+    if (quantity <= QTY_EPSILON) continue;
     const totalCost = lotsCost(pos.lots);
     const avgPrice = totalCost / quantity;
     const sym = toYahooSymbol(pos.stockCode, pos.market, pos.exchange);
@@ -260,80 +267,55 @@ export function calcRealizedPnlRate(
   return cost > 0 ? (realizedPnl / cost) * 100 : 0;
 }
 
-// 거래 목록에서 FIFO 방식으로 매매 행(TradeRow)을 생성 (역순 반환, 날짜 오름차순 입력 가정)
+// 거래 목록에서 FIFO 방식으로 매매 행(TradeRow)을 생성 (최신 거래부터 반환)
 export function buildTradeRows(trades: Trade[]): TradeRow[] {
-  const buyQueue: Array<{ date: string; remainingQty: number; price: number }> =
-    [];
   const result: TradeRow[] = [];
 
-  for (const trade of trades) {
-    if (trade.type === "BUY") {
-      buyQueue.push({
-        date: trade.tradeDate,
-        remainingQty: trade.quantity,
-        price: trade.price,
-      });
-      result.push({
-        id: trade.id,
-        date: trade.tradeDate,
-        type: "BUY",
-        quantity: trade.quantity,
-        price: trade.price,
-        total: trade.price * trade.quantity,
-        memo: trade.memo,
-      });
-    } else {
-      let sellQty = trade.quantity;
-      const matchedLots: Array<{ date: string; qty: number; price: number }> =
-        [];
-
-      while (sellQty > 0 && buyQueue.length > 0) {
-        const buy = buyQueue[0]!;
-        const matchQty = Math.min(sellQty, buy.remainingQty);
-        matchedLots.push({ date: buy.date, qty: matchQty, price: buy.price });
-        buy.remainingQty -= matchQty;
-        sellQty -= matchQty;
-        if (buy.remainingQty === 0) buyQueue.shift();
-      }
-
-      let avgHoldingDays: number | undefined;
-      let holdingRange: string | undefined;
-      let pnlRate: number | undefined;
-      let realizedPnl: number | undefined;
-
-      if (matchedLots.length > 0) {
-        const totalQty = matchedLots.reduce((s, l) => s + l.qty, 0);
-        const avgBuyPrice =
-          matchedLots.reduce((s, l) => s + l.qty * l.price, 0) / totalQty;
-        const totalWeightedDays = matchedLots.reduce(
-          (s, l) => s + daysBetween(l.date, trade.tradeDate) * l.qty,
-          0,
-        );
-        avgHoldingDays = Math.round(totalWeightedDays / totalQty);
-        holdingRange = `${fmtYYMMDD(matchedLots[0]!.date)}~${fmtYYMMDD(trade.tradeDate)}`;
-        realizedPnl = calcRealizedPnl(trade.price, avgBuyPrice, totalQty);
-        pnlRate = calcRealizedPnlRate(realizedPnl, avgBuyPrice, totalQty);
-      }
-
-      // 매수 잔고보다 많이 매도해 일부(또는 전부) 수량을 매칭하지 못한 경우
-      const oversold = sellQty > 0;
-
-      result.push({
-        id: trade.id,
-        date: trade.tradeDate,
-        type: "SELL",
-        quantity: trade.quantity,
-        price: trade.price,
-        total: trade.price * trade.quantity,
-        memo: trade.memo,
-        avgHoldingDays,
-        holdingRange,
-        pnlRate,
-        realizedPnl,
-        oversold,
-      });
+  runFifo(trades, (trade, _pos, sell) => {
+    const base = {
+      id: trade.id,
+      date: trade.tradeDate,
+      quantity: trade.quantity,
+      price: trade.price,
+      total: trade.price * trade.quantity,
+      memo: trade.memo,
+    };
+    if (!sell) {
+      result.push({ ...base, type: "BUY" });
+      return;
     }
-  }
+
+    const { matched } = sell;
+    let avgHoldingDays: number | undefined;
+    let holdingRange: string | undefined;
+    let pnlRate: number | undefined;
+    let realizedPnl: number | undefined;
+
+    if (matched.length > 0) {
+      const totalQty = matched.reduce((s, l) => s + l.qty, 0);
+      const avgBuyPrice =
+        matched.reduce((s, l) => s + l.qty * l.price, 0) / totalQty;
+      const totalWeightedDays = matched.reduce(
+        (s, l) => s + daysBetween(l.date, trade.tradeDate) * l.qty,
+        0,
+      );
+      avgHoldingDays = Math.round(totalWeightedDays / totalQty);
+      holdingRange = `${fmtYYMMDD(matched[0]!.date)}~${fmtYYMMDD(trade.tradeDate)}`;
+      realizedPnl = calcRealizedPnl(trade.price, avgBuyPrice, totalQty);
+      pnlRate = calcRealizedPnlRate(realizedPnl, avgBuyPrice, totalQty);
+    }
+
+    result.push({
+      ...base,
+      type: "SELL",
+      avgHoldingDays,
+      holdingRange,
+      pnlRate,
+      realizedPnl,
+      // 매수 잔고보다 많이 매도해 일부(또는 전부) 수량을 매칭하지 못한 경우
+      oversold: sell.unmatchedQty > 0,
+    });
+  });
 
   return result.reverse();
 }
@@ -342,36 +324,19 @@ export type RealizedPnl = { KRW: number; USD: number; oversold: boolean };
 
 // 전체 거래 내역에서 FIFO 방식으로 실현손익을 통화별로 계산
 export function computeRealizedPnl(trades: Trade[]): RealizedPnl {
-  const sorted = sortTradesAsc(trades);
-  const queues = new Map<string, { lots: Lot[]; currency: "KRW" | "USD" }>();
   const result: RealizedPnl = { KRW: 0, USD: 0, oversold: false };
 
-  for (const t of sorted) {
-    const key = `${t.accountId}|${stockKey(t.market, t.stockCode)}`;
-    if (t.type === "BUY") {
-      if (!queues.has(key)) {
-        queues.set(key, { lots: [], currency: t.currency });
-      }
-      queues.get(key)!.lots.push({ qty: t.quantity, price: t.price });
-    } else {
-      let queue = queues.get(key);
-      if (!queue) {
-        // 매수 이력이 전혀 없는 상태에서 매도가 들어온 경우도 oversold로 표시해야 한다.
-        queue = { lots: [], currency: t.currency };
-        queues.set(key, queue);
-      }
-      let realized = 0;
-      const leftover = consumeFifoLots(queue.lots, t.quantity, (lot, used) => {
-        realized += (t.price - lot.price) * used;
-      });
-      if (leftover > 0) {
-        // 잔고보다 큰 매도로 매칭되지 못한 수량은 실현손익 집계에서 제외됨을 표시
-        result.oversold = true;
-      }
-      if (queue.currency === "KRW") result.KRW += realized;
-      else result.USD += realized;
-    }
-  }
+  runFifo(trades, (t, pos, sell) => {
+    if (!sell) return;
+    // 잔고보다 큰 매도로 매칭되지 못한 수량은 실현손익 집계에서 제외됨을 표시
+    if (sell.unmatchedQty > 0) result.oversold = true;
+    const realized = sell.matched.reduce(
+      (s, lot) => s + (t.price - lot.price) * lot.qty,
+      0,
+    );
+    if (pos.currency === "KRW") result.KRW += realized;
+    else result.USD += realized;
+  });
 
   return result;
 }

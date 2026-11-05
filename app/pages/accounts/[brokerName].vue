@@ -331,7 +331,7 @@ const brokerPositions = computed(() => buildFifoPositions(brokerTrades.value));
 
 const yahooSymbols = computed(() =>
   [...brokerPositions.value.values()]
-    .filter((pos) => lotsQty(pos.lots) > 0)
+    .filter((pos) => lotsQty(pos.lots) > QTY_EPSILON)
     .map((pos) => toYahooSymbol(pos.stockCode, pos.market, pos.exchange)),
 );
 
