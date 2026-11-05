@@ -151,6 +151,8 @@
           </li>
         </ul>
       </section>
+
+      <UiPnlDisclaimer />
     </template>
 
     <!-- 계좌 추가/수정 모달 -->

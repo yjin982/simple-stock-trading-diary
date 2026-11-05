@@ -306,6 +306,8 @@
         </table>
       </div>
     </section>
+
+    <UiPnlDisclaimer v-if="brokerAccounts.length > 0" />
   </div>
 </template>
 

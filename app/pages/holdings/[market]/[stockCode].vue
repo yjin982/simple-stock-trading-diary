@@ -128,6 +128,8 @@
       </section>
     </template>
 
+    <UiPnlDisclaimer v-if="holdings.length > 0" />
+
     <TradeFormModal
       v-model:open="modalOpen"
       :edit-trade="editingTrade ?? undefined"

@@ -138,6 +138,8 @@
         </dl>
       </div>
     </div>
+
+    <UiPnlDisclaimer class="mt-3" />
   </section>
 </template>
 

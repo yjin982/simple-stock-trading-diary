@@ -30,6 +30,7 @@
         :trend="summary.avgRate != null ? pnlTrend(summary.avgRate) : 'neutral'"
       />
     </div>
+    <UiPnlDisclaimer />
 
     <!-- 필터 + 정렬 -->
     <div class="flex flex-wrap items-center justify-between gap-2">
