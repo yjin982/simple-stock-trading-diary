@@ -69,7 +69,8 @@ create policy "trades: 본인만 접근" on public.trades
   with check (user_id = auth.uid());
 
 -- 초과 매도 방지 트리거 trades_prevent_oversell과 함수 trades_oversold_qty는
--- migrations/20261105_01_trades_prevent_oversell.sql 참고 (코드를 두 곳에 두지 않기 위해 여기 옮기지 않음)
+-- migrations/20261105_01_trades_prevent_oversell.sql 참고 (코드를 두 곳에 두지 않기 위해 여기 옮기지 않음).
+-- 트리거 함수의 최신 본문(종목별 잠금 포함)은 migrations/20261105_03_trades_oversell_lock.sql
 
 -- ── stock_settings ─────────────────────────────────────
 
