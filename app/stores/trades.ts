@@ -109,15 +109,20 @@ export const useTradesStore = defineStore('trades', () => {
     loading.value = true
     error.value = null
 
-    const { data, error: err } = await client
-      .from('trades')
-      .select('*, accounts(alias, broker_name)')
-      .order('trade_date', { ascending: false })
-      .order('sequence', { ascending: false })
-      .order('created_at', { ascending: false })
+    // 페이지 경계에서 순서가 흔들려 행이 빠지거나 중복되지 않도록 마지막에 id로 정렬을 고정한다.
+    const { rows, error: err } = await fetchAllRows<TradeRow>((from, to, withCount) =>
+      client
+        .from('trades')
+        .select('*, accounts(alias, broker_name)', { count: withCount ? 'exact' : undefined })
+        .order('trade_date', { ascending: false })
+        .order('sequence', { ascending: false })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(from, to),
+    )
 
-    if (err) error.value = err.message
-    else items.value = (data as TradeRow[]).map(mapTrade)
+    if (err) error.value = err
+    else items.value = rows.map(mapTrade)
 
     loading.value = false
   }
