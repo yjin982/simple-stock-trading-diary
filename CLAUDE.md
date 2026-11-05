@@ -16,7 +16,7 @@ Package manager: pnpm (pnpm-lock.yaml is present — use pnpm, not npm/yarn).
 - `pnpm dev` — start dev server at http://localhost:3000
 - `pnpm build` — production build
 - `pnpm preview` — preview a production build locally
-- `pnpm exec vue-tsc --noEmit` — type check (no script alias)
+- `pnpm typecheck` — type check (`vue-tsc -b --noEmit`). The `-b` is required: the root `tsconfig.json` only has project references, so plain `vue-tsc --noEmit` checks nothing and always passes.
 - `pnpm test` — Vitest (`tests/**/*.test.ts`). Runs without the Nuxt runtime, so only pure modules with explicit imports (e.g. `app/utils/calc.ts`) can be tested this way. Run a single file with `pnpm exec vitest run tests/calc.test.ts`, or a single case with `-t "<name>"`.
 
 There is no lint script. When changing `app/utils/calc.ts`, add or update a case in `tests/calc.test.ts` first.
