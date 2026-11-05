@@ -31,13 +31,13 @@ Nuxt 4 `srcDir` is `app/`; server routes are in the root `server/`. `app/utils`,
 - `app/pages/` — `index.vue` (login / home), `trades.vue` (history + calendar tabs), `holdings/index.vue`, `holdings/[market]/[stockCode].vue`, `accounts/index.vue`, `accounts/[brokerName].vue`. Protected pages use the `auth` middleware.
 - `app/components/ui/` — hand-written UI primitives (shadcn-vue is **not** installed, even though README says so).
 - `server/api/stock/` — `search.ts` (KRX, KR stocks), `search-us.ts` (Yahoo), `quote.get.ts` (Yahoo quotes, 15 min cache, max 50 symbols). `server/api/cron/keep-alive.get.ts` keeps the free Supabase project awake; the cron schedule is declared in `nuxt.config.ts` (`nitro.vercel.config.crons`), not in `vercel.json`.
-- There are no SQL/migration files in the repo; the schema and RLS policies live only in the Supabase dashboard. Column changes must be applied there by hand.
+- `supabase/` — there is no Supabase CLI setup; SQL is run by hand in the dashboard SQL Editor. `migrations/*.sql` record what has been applied (including the `trades_prevent_oversell` trigger, which rejects any insert/update/delete that increases a position's oversold quantity), and `inspect_schema.sql` dumps the live schema, RLS policies, triggers and enums for comparison. Any schema change must be written as a new migration file **and** run in the dashboard.
 
 ## Domain rules (keep these consistent everywhere)
 
 - **Identify a stock by market + code.** KR and US can share a code. Use `stockKey(market, stockCode)` for map keys and filters; FIFO positions are keyed `accountId|market|stockCode`.
 - **Trade order** is `tradeDate` → `sequence` (user-set order within a day) → `createdAt`. Always sort with `sortTradesAsc`; `FormModal.vue` mirrors the same rule to check the balance at the time of a sell.
-- **Selling more than held** is blocked in the client (FormModal for sells, `wouldIntroduceOversell` for BUY edits/deletes). Existing oversold data is tracked via `oversoldQty` / `oversold` and shown as a warning, not silently dropped.
+- **Selling more than held** is blocked in the client (FormModal for sells, `wouldIntroduceOversell` for BUY edits/deletes) and again in the DB by the `trades_prevent_oversell` trigger, using the same rule (reject only if the oversold quantity increases). Keep the two in sync. Existing oversold data is tracked via `oversoldQty` / `oversold` and shown as a warning, not silently dropped.
 - **One FIFO loop.** `buildFifoPositions`, `computeRealizedPnl` and `buildTradeRows` all go through the private `runFifo` in `calc.ts`; don't write another lot-matching loop elsewhere, or screens will disagree.
 - **Quantity policy:** KR stocks are whole shares, US stocks may be fractional. Never compare quantities to `0` with `===`/`>`; use `QTY_EPSILON` (and `roundQty` for display / comparing against user input), because fractional sums leave float noise like `0.30000000000000004`.
 - **Missing prices:** when a quote is unavailable, `currentPrice` falls back to `avgPrice` and `priceAvailable` is `false`; the UI must show "—" / a notice rather than a normal-looking value.
