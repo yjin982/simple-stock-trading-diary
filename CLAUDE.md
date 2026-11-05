@@ -10,7 +10,7 @@ A local, gitignored `.claude/code-review.md` (if present) tracks review findings
 
 ## Commands
 
-Package manager: pnpm (pnpm-lock.yaml is present — use pnpm, not npm/yarn). Node.js 22+ is required (yahoo-finance2 v4; pinned via `engines.node`, which Vercel also uses).
+Package manager: pnpm (pnpm-lock.yaml is present — use pnpm, not npm/yarn). Node.js 24 is used (`engines.node: "24.x"`, which Vercel also uses; yahoo-finance2 v4 needs 22+). Keep the Vercel project's Node.js Version setting on 24.x too.
 
 - `pnpm install` — install dependencies
 - `pnpm dev` — start dev server at http://localhost:3000
